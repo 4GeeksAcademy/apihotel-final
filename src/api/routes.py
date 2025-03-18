@@ -718,9 +718,20 @@ def delete_housekeeper_task(id):
     return jsonify({"message": "HouseKeeperTask deleted successfully"}), 200
 
 @api.route('/maintenancetasks', methods=['GET'])
-def get_all_maintenance_tasks():
-    """Obtener todas las tareas de mantenimiento"""
-    maintenance_tasks = MaintenanceTask.query.all()
+def get_user_maintenance_tasks():
+    """Obtener tareas de mantenimiento asignadas a un usuario específico"""
+
+    maintenance_id = request.args.get('maintenance_id')
+
+    if maintenance_id is None:
+        return jsonify({"error": "maintenance_id es requerido"}), 400
+
+    # Filtrar solo las tareas asignadas a este usuario
+    maintenance_tasks = MaintenanceTask.query.filter_by(maintenance_id=maintenance_id).all()
+
+    if not maintenance_tasks:
+        return jsonify({"message": "No hay tareas asignadas para este usuario"}), 200
+
     return jsonify([task.serialize() for task in maintenance_tasks]), 200
 
 @api.route('/maintenancetasks/<int:id>', methods=['GET'])

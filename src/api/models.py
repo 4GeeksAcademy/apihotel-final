@@ -221,7 +221,7 @@ class MaintenanceTask(db.Model):
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=True)  # Cambiar a nullable=True
 
     # Relaciones
-    room = db.relationship('Room')
+    room = db.relationship('Room',backref='maintenancetask')
     maintenance = db.relationship('Maintenance')
     housekeeper = db.relationship('HouseKeeper')
     category = db.relationship('Category')
@@ -229,15 +229,17 @@ class MaintenanceTask(db.Model):
     def __repr__(self):
         return f'<MaintenanceTask {self.nombre}>'
 
-    def serialize(self):
-        return {
-            "id": self.id,
-            "nombre": self.nombre,
-            "photo": self.photo,
-            "condition": self.condition,
-            "room": self.room.serialize() if self.room else None,  # Detalles de la habitación
-            "maintenance": self.maintenance.serialize() if self.maintenance else None,  # Detalles del mantenimiento
-            "housekeeper": self.housekeeper.serialize() if self.housekeeper else None,  # Detalles del housekeeper
-            "category": self.category.serialize() if self.category else None,  # Detalles de la categoría
-        }
+def serialize(self):
+    return {
+        "id": self.id,
+        "nombre": self.nombre,
+        "photo": self.photo,
+        "condition": self.condition,
+        "room": self.room.serialize() if self.room else None,  # Detalles de la habitación
+        "room_nombre": self.room.nombre if self.room else None,
+        "maintenance_id": self.maintenance_id,  # 🔹 Agregar explicitamente el maintenance_id
+        "maintenance": self.maintenance.serialize() if self.maintenance else None,  # Detalles del mantenimiento
+        "housekeeper": self.housekeeper.serialize() if self.housekeeper else None,  # Detalles del housekeeper
+        "category": self.category.serialize() if self.category else None,  # Detalles de la categoría
+    }
 
