@@ -1,81 +1,100 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+
 const CrearRoom = () => {
-    const [branchId, setBranchId] = useState("");  // ✅ Definir branchId
-    const [branches, setBranches] = useState([]);  // ✅ Evitar error en .map()   
+    const [branchId, setBranchId] = useState("");
+    const [branches, setBranches] = useState([]);
     const [nombre, setNombre] = useState("");
     const [cargando, setCargando] = useState(false);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
-    // Usamos useRef para mantener una referencia al estado de si el componente está montado o no
-    const isMounted = useRef(true); // Esto se utilizará para evitar actualizaciones en un componente desmontado     
-    // Función para obtener la URL del backend
+    const isMounted = useRef(true);
+
     const getBackendUrl = () => {
         const baseUrl = process.env.BACKEND_URL;
         if (!baseUrl) {
-            console.error("Error: BACKEND_URL no está definido en las variables de entorno.");
+            console.error("Error: BACKEND_URL no está definido.");
             setError("Error interno: No se ha configurado la URL del servidor.");
             return null;
         }
         return baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
     };
 
-    // Se ejecuta cuando el componente se desmonta
     useEffect(() => {
-        fetch(process.env.BACKEND_URL + "/api/branches")  // Asegúrate de que esta URL es correcta
-            .then((response) => response.json())
-            .then((data) => setBranches(data))
-            .catch((error) => console.error("Error cargando branches:", error));
-        // Cuando el componente se desmonta, se cambia la referencia a false
-        isMounted.current = false;
+        const token = localStorage.getItem("token"); 
+        console.log("Token enviado", token);
+
+        fetch(process.env.BACKEND_URL + "/api/branches", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}` 
+            }
+        })
+        .then((response) => {
+            if (!response.ok) {
+                throw new Error("Error al obtener branches");
+            }
+            return response.json();
+        })
+        .then((data) => {
+            if (isMounted.current) setBranches(data);
+        })
+        .catch((error) => {
+            console.error("Error cargando branches:", error);
+            setError("No se pudieron cargar las sucursales.");
+        });
+
         return () => {
-            isMounted.current = false; // Se asegura de que cuando el componente se desmonte, no se actualice el estado
+            isMounted.current = false;
         };
     }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const nombreTrim = nombre.trim();
 
+        const token = localStorage.getItem("token");
+        const apiUrl = getBackendUrl();
+        if (!apiUrl || !token) return;
+
+        const nombreTrim = nombre.trim();
         if (!nombreTrim) {
             setError("El nombre de la habitación es obligatorio.");
             return;
         }
 
-        const apiUrl = getBackendUrl();
-        if (!apiUrl) return;
-
         setCargando(true);
         setError(null);
+
         try {
             const response = await fetch(`${apiUrl}api/rooms`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Accept": "application/json"
+                    "Authorization": `Bearer ${token}` 
                 },
                 body: JSON.stringify({
-                    nombre: nombre.trim(),
-                    branchId: Number(branchId) || null
+                    nombre: nombreTrim,
+                    branchId: Number(branchId)
                 }),
             });
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.message || "Error al actualizar la habitación."); f
+                throw new Error(errorData.message || "Error al crear la habitación.");
             }
-            const data = await response.json(); // Esto asume que la respuesta es JSON
+
+            const data = await response.json();
             console.log("Habitación creada:", data);
-            setNombre(""); // Limpiar el campo de nombre
+            setNombre("");
             alert("Habitación creada exitosamente.");
-            navigate("/listaRoom");
+            navigate("/listaRooms");
         } catch (error) {
             console.error("Error al crear la habitación:", error);
             setError(error.message || "Error desconocido al crear la habitación.");
         } finally {
             setCargando(false);
         }
-
     };
 
     return (
@@ -112,18 +131,17 @@ const CrearRoom = () => {
                             )}
                         </select>
                         <button type="submit" className="btn w-100" style={{ backgroundColor: "#ac85eb", borderColor: "#B7A7D1" }}>
-                            {branchId ? "Guardar Cambios" : "Crear Room"}
+                            Crear Room
                         </button>
                     </div>
-                </form >
+                </form>
                 <div className="d-flex justify-content-center align-items-center mt-4">
                     <button className="btn" style={{ backgroundColor: "#ac85eb", borderColor: "#B7A7D1" }} onClick={() => navigate("/listaRooms")}>
                         Volver
                     </button>
-                </div >
+                </div>
             </div>
-
-        </div >
+        </div>
     );
 };
 

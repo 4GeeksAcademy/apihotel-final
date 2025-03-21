@@ -1,338 +1,232 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "../component/sidebar";
 
 const HouseKeeper = () => {
   const [housekeepers, setHousekeepers] = useState([]);
-  const [nombre, setNombre] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [id_branche, setIdBranche] = useState('');
-  const [id_hotel, setIdHotel] = useState('');
+  const [housekeeperSeleccionado, setHousekeeperSeleccionado] = useState(null);
+  const [nombre, setNombre] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [branchId, setBranchId] = useState("");
   const [branches, setBranches] = useState([]);
-  const [hotels, setHotels] = useState([]);
-  const [editingId, setEditingId] = useState(null);
-  const [showForm, setShowForm] = useState(false);
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   const backendUrl = process.env.REACT_APP_BACKEND_URL || process.env.BACKEND_URL;
 
-  const loadHousekeepers = async () => {
-    try {
-      const response = await fetch(`${backendUrl}/api/housekeepers`);
-      if (response.ok) {
-        const data = await response.json();
-        setHousekeepers(data);
-      } else {
-        console.error("Error al obtener los housekeepers:", response.status);
-      }
-    } catch (error) {
-      console.error('Error al obtener los housekeepers:', error);
-    }
-  };
-
-  const loadBranches = async () => {
-    try {
-      const response = await fetch(`${backendUrl}/api/branches`);
-      if (response.ok) {
-        const data = await response.json();
-        setBranches(data);
-      } else {
-        console.error("Error al obtener las sucursales:", response.status);
-      }
-    } catch (error) {
-      console.error('Error al obtener las sucursales:', error);
-    }
-  };
-
-  const loadHotels = async () => {
-    try {
-      const response = await fetch(`${backendUrl}/api/hoteles`);
-      if (response.ok) {
-        const data = await response.json();
-        setHotels(data);
-      } else {
-        console.error("Error al obtener los hoteles:", response.status);
-      }
-    } catch (error) {
-      console.error('Error al obtener los hoteles:', error);
-    }
-  };
-
-  const createHouseKeeper = async () => {
-    if (!nombre || !email || !password || !id_branche || !id_hotel) {
-      alert('Por favor, completa todos los campos');
-      return;
-    }
-
-    if (!email.includes('@')) {
-      alert('Por favor, ingresa un email válido');
-      return;
-    }
-
-    try {
-      const response = await fetch(`${backendUrl}/api/housekeepers`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          nombre,
-          email,
-          password,
-          id_branche,
-          hotel_id: id_hotel,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setHousekeepers([...housekeepers, data]);
-        resetForm();
-        setShowForm(false);
-      } else {
-        const errorData = await response.json();
-        console.error("Error al crear el housekeeper:", errorData.message);
-      }
-    } catch (error) {
-      console.error('Error al crear el housekeeper:', error);
-    }
-  };
-
-  const updateHouseKeeper = async () => {
-    if (!nombre || !email || !password || !editingId || !id_branche || !id_hotel) {
-      alert('Por favor, completa todos los campos para editar');
-      return;
-    }
-
-    if (!email.includes('@')) {
-      alert('Por favor, ingresa un email válido');
-      return;
-    }
-
-    try {
-      const response = await fetch(`${backendUrl}/api/housekeepers/${editingId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          nombre,
-          email,
-          password,
-          id_branche,
-          hotel_id: id_hotel,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setHousekeepers(
-          housekeepers.map(item => (item.id === editingId ? data : item))
-        );
-        resetForm();
-        setShowForm(false);
-      } else {
-        const errorData = await response.json();
-        console.error("Error al editar el housekeeper:", errorData.message);
-      }
-    } catch (error) {
-      console.error('Error al editar el housekeeper:', error);
-    }
-  };
-
-  const deleteHouseKeeper = async (id) => {
-    const isConfirmed = window.confirm("¿Estás seguro de que quieres eliminar este housekeeper?");
-    if (!isConfirmed) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`${backendUrl}/api/housekeepers/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        setHousekeepers(housekeepers.filter(item => item.id !== id));
-      } else {
-        const errorData = await response.json();
-        console.error("Error al eliminar el housekeeper:", errorData.message);
-      }
-    } catch (error) {
-      console.error('Error al eliminar el housekeeper:', error);
-    }
-  };
-
-  const resetForm = () => {
-    setNombre('');
-    setEmail('');
-    setPassword('');
-    setIdBranche('');
-    setIdHotel('');
-    setEditingId(null);
-  };
-
-  const handleEdit = (housekeeper) => {
-    setNombre(housekeeper.nombre);
-    setEmail(housekeeper.email);
-    setPassword(housekeeper.password);
-    setIdBranche(housekeeper.id_branche);
-    setIdHotel(housekeeper.hotel_id);
-    setEditingId(housekeeper.id);
-    setShowForm(true);
-  };
-
   useEffect(() => {
-    loadHousekeepers();
-    loadBranches();
-    loadHotels();
+    verificarAutenticacion();
+    cargarSucursales();
+    cargarHousekeepers();
   }, []);
 
-  const shouldShowForm = showForm || editingId;
+  const verificarAutenticacion = () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("No tienes acceso. Inicia sesión.");
+      navigate("/login");
+    }
+  };
+
+  const cargarSucursales = async () => {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(`${backendUrl}/api/branches`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }
+      });
+      if (!response.ok) throw new Error("Error al cargar sucursales");
+      const data = await response.json();
+      setBranches(data);
+    } catch (error) {
+      console.error("Error al obtener sucursales:", error);
+      setError("Error de conexión");
+    }
+  };
+
+  const cargarHousekeepers = async () => {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(`${backendUrl}/api/housekeepers`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }
+      });
+      if (!response.ok) throw new Error("Error al cargar housekeepers");
+      const data = await response.json();
+      setHousekeepers(data);
+    } catch (error) {
+      console.error("Error al obtener housekeepers:", error);
+      setError("Error de conexión");
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!branchId) {
+      alert("Debes seleccionar una sucursal.");
+      return;
+    }
+
+    const housekeeperData = {
+      nombre,
+      email,
+      password,
+      id_branche: parseInt(branchId)
+    };
+
+    const url = housekeeperSeleccionado
+      ? `${backendUrl}/api/housekeepers/${housekeeperSeleccionado.id}`
+      : `${backendUrl}/api/housekeepers`;
+
+    const method = housekeeperSeleccionado ? "PUT" : "POST";
+    const token = localStorage.getItem("token");
+
+    try {
+      const response = await fetch(url, {
+        method: method,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(housekeeperData)
+      });
+
+      if (!response.ok)
+        throw new Error(`Error al ${housekeeperSeleccionado ? "actualizar" : "crear"} el housekeeper`);
+
+      const nuevoHousekeeper = await response.json();
+      if (housekeeperSeleccionado) {
+        setHousekeepers((prev) =>
+          prev.map((m) => (m.id === nuevoHousekeeper.id ? nuevoHousekeeper : m))
+        );
+      } else {
+        setHousekeepers((prev) => [...prev, nuevoHousekeeper]);
+      }
+
+      setHousekeeperSeleccionado(null);
+      setNombre("");
+      setEmail("");
+      setPassword("");
+      setBranchId("");
+      setMostrarFormulario(false);
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+
+  const eliminarHousekeeper = async (id) => {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(`${backendUrl}/api/housekeepers/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }
+      });
+      if (!response.ok) throw new Error("Hubo un problema al eliminar el housekeeper");
+      setHousekeepers((prev) =>
+        prev.filter((housekeeper) => housekeeper.id !== id)
+      );
+    } catch (error) {
+      alert("Error al eliminar: " + error.message);
+    }
+  };
 
   return (
-    <div className="d-flex">
-      {/* Sidebar personalizado */}
-      <Sidebar/>
+    <>
+      <div className="d-flex">
+        <Sidebar />
+        <div className="container">
+          <h2 className="text-center my-3">Housekeepers</h2>
 
-      {/* Contenido principal */}
-      <div className="container">
-        <h2 className="text-center my-3">Gestión de Housekeepers</h2>
+          <div className="d-flex justify-content-center align-items-center mb-4">
+            <button
+              className="btn"
+              style={{ backgroundColor: "#ac85eb", borderColor: "#B7A7D1" }}
+              onClick={() => {
+                setHousekeeperSeleccionado(null);
+                setNombre("");
+                setEmail("");
+                setPassword("");
+                setBranchId("");
+                setMostrarFormulario(true);
+              }}
+            >
+              Crear Housekeeper
+            </button>
+          </div>
 
-        {/* Botón Crear Housekeeper centrado */}
-        <div className="d-flex justify-content-center align-items-center mb-4">
-          <button
-            className="btn"
-            style={{ backgroundColor: "#ac85eb", borderColor: "#B7A7D1" }}
-            onClick={() => {
-              resetForm();
-              setShowForm(true);
-            }}
-          >
-            Crear Housekeeper
-          </button>
-        </div>
-
-        {/* Lista de Housekeepers */}
-        <div className="mb-4">
           <div className="row bg-light p-2 fw-bold border-bottom">
             <div className="col">Nombre</div>
             <div className="col">Email</div>
-            <div className="col">Hotel</div>
             <div className="col">Sucursal</div>
             <div className="col text-center">Acciones</div>
           </div>
-          {housekeepers.map(housekeeper => (
+
+          {housekeepers.map((housekeeper) => (
             <div key={housekeeper.id} className="row p-2 border-bottom align-items-center">
               <div className="col">{housekeeper.nombre}</div>
               <div className="col">{housekeeper.email}</div>
-              <div className="col">{housekeeper.hotel_id}</div>
-              <div className="col">{housekeeper.id_branche}</div>
-              <div className="col text-center">
+              <div className="col">{branches.find(branch => branch.id === housekeeper.id_branche)?.nombre || "No asignado"}</div>
+              <div className="col d-flex justify-content-center">
                 <button
                   className="btn me-2"
                   style={{ backgroundColor: "#ac85eb", borderColor: "#B7A7D1" }}
-                  onClick={() => handleEdit(housekeeper)}
+                  onClick={() => {
+                    setHousekeeperSeleccionado(housekeeper);
+                    setNombre(housekeeper.nombre);
+                    setEmail(housekeeper.email);
+                    setPassword(housekeeper.password);
+                    setBranchId(housekeeper.id_branche);
+                    setMostrarFormulario(true);
+                  }}
                 >
                   Editar
                 </button>
                 <button
                   className="btn"
                   style={{ backgroundColor: "#ac85eb", borderColor: "#B7A7D1" }}
-                  onClick={() => deleteHouseKeeper(housekeeper.id)}
+                  onClick={() => eliminarHousekeeper(housekeeper.id)}
                 >
                   Eliminar
                 </button>
               </div>
             </div>
           ))}
-        </div>
 
-        {/* Formulario condicional */}
-        {shouldShowForm && (
-          <div className="card p-4 mt-5">
-            <form
-              onSubmit={e => {
-                e.preventDefault();
-                editingId ? updateHouseKeeper() : createHouseKeeper();
-              }}
-            >
-              <input
-                type="text"
-                className="form-control mb-2"
-                id="nombre"
-                placeholder="Nombre"
-                value={nombre}
-                onChange={e => setNombre(e.target.value)}
-                required
-              />
-              <input
-                type="email"
-                className="form-control mb-2"
-                id="email"
-                placeholder="Email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-              />
-              <input
-                type="password"
-                className="form-control mb-2"
-                id="password"
-                placeholder="Contraseña"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-              />
-              <select
-                id="id_hotel"
-                className="form-select mb-2"
-                value={id_hotel}
-                onChange={e => setIdHotel(e.target.value)}
-                required
-              >
-                <option value="">Seleccione un hotel</option>
-                {hotels.map(hotel => (
-                  <option key={hotel.id} value={hotel.id}>
-                    {hotel.nombre}
-                  </option>
-                ))}
-              </select>
-              <select
-                id="id_branche"
-                className="form-select mb-3"
-                value={id_branche}
-                onChange={e => setIdBranche(e.target.value)}
-                required
-              >
-                <option value="">Seleccione una sucursal</option>
-                {branches.map(branch => (
-                  <option key={branch.id} value={branch.id}>
-                    {branch.nombre}
-                  </option>
-                ))}
-              </select>
-              <div className="d-flex justify-content-between">
-                <button type="submit" className="btn" style={{ backgroundColor: "#ac85eb", borderColor: "#B7A7D1" }}>
-                  {editingId ? 'Actualizar' : 'Crear'} Housekeeper
+          {mostrarFormulario && (
+            <div className="card p-4 mt-5">
+              <h3 className="text-center mb-4">
+                {housekeeperSeleccionado ? "Editar Housekeeper" : "Crear Housekeeper"}
+              </h3>
+              <form onSubmit={handleSubmit}>
+                <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} className="form-control mb-3" placeholder="Nombre" required />
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="form-control mb-3" placeholder="Email" required />
+                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="form-control mb-3" placeholder="Contraseña" required />
+                <select value={branchId} onChange={(e) => setBranchId(e.target.value)} className="form-control mb-3" required>
+                  <option value="">Seleccionar Sucursal</option>
+                  {branches.map((branch) => (
+                    <option key={branch.id} value={branch.id}>{branch.nombre}</option>
+                  ))}
+                </select>
+                <button type="submit" className="btn w-100" style={{ backgroundColor: "#ac85eb", borderColor: "#B7A7D1" }}>
+                  {housekeeperSeleccionado ? "Guardar Cambios" : "Crear Housekeeper"}
                 </button>
-                {!editingId && (
-                  <button
-                    type="button"
-                    className="btn " style={{ backgroundColor: "#ac85eb", borderColor: "#B7A7D1" }}
-                    onClick={() => setShowForm(false)}
-                  >
-                    Cancelar
-                  </button>
-                )}
-              </div>
-            </form>
-          </div>
-        )}
-
-
+              </form>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

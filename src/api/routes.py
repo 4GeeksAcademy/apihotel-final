@@ -1,24 +1,23 @@
-
 """
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
-from flask import Flask, request, jsonify, url_for, Blueprint
+from flask import Flask, request, jsonify, Blueprint
 from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
 from api.models import db, User, Hoteles, Theme, Category, HotelTheme, Branches, Maintenance, HouseKeeper, HouseKeeperTask, MaintenanceTask, Room
 import datetime
 import jwt
-from werkzeug.security import check_password_hash, generate_password_hash
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_jwt_extended import JWTManager
 from flask_jwt_extended import create_access_token
+
 # from datetime import datetime
 
 # Blueprint para los endpoints de la API
 api = Blueprint('api', __name__)
 app = Flask(__name__)
 app.config['JWT_SECRET_KEY'] = 'tu_clave_secreta'  # Cambia esto por una clave secreta segura
-# jwt = JWTManager(app)
+jwt = JWTManager(app)
 
 SECRET_KEY = "your_secret_key"
 # Permitir solicitudes CORS a esta API
@@ -44,10 +43,17 @@ def get_users():
 # rutas para hoteles
 
 @api.route('/hoteles', methods=['GET'])
+@jwt_required()
 def obtener_hoteles():
-    hoteles = Hoteles.query.all()  # Obtener todos los hotel
-    hoteles_serialize = [hotel.serialize() for hotel in hoteles]  # Serializar cada hotel
-    return jsonify(hoteles_serialize), 200  # Retornar los datos serializados como JSON
+    hotel_id = get_jwt_identity()  # Ahora `hotel_id` es un string
+    
+    print("Usuario autenticado con hotel_id:", hotel_id)  # Verifica qué devuelve el token
+
+    hotel = Hoteles.query.get(int(hotel_id))  # Convertimos a int para la consulta
+    if not hotel:
+        return jsonify({"error": "Hotel no encontrado"}), 404
+
+    return jsonify(hotel.serialize()), 200
 
 @api.route("/hoteles/<int:id>", methods=["GET"])
 def obtener_hotel_por_id(id):
@@ -92,23 +98,37 @@ def crear_hoteles():
     return jsonify(nuevo_hotel.serialize()), 200
 
 @api.route("/hoteles/<int:id>", methods=["DELETE"])
+@jwt_required()
 def delete_hoteles(id):
+    hotel_id = get_jwt_identity()  # Obtener ID del hotel autenticado
+
+    if int(hotel_id) != id:  # Comparar con el ID de la URL
+        return jsonify({"error": "Acceso denegado"}), 403  # Bloquear acceso
+    
     hotel = Hoteles.query.get(id)
     
     if not hotel:
-        return jsonify({"error": "Hotel no encontrado"}), 400
+        return jsonify({"error": "Hotel no encontrado"}), 404
     
     db.session.delete(hotel)
     db.session.commit()
     
-    return jsonify({"message" : "Hotel eliminado"}), 200
+    return jsonify({"message": "Hotel eliminado"}), 200
+
+
 
 @api.route("/hoteles/<int:id>", methods=["PUT"])
+@jwt_required()
 def actualizar_hoteles(id):
+    hotel_id = get_jwt_identity()  # Obtener ID del hotel autenticado
+
+    if int(hotel_id) != id:  # Comparar con el ID de la URL
+        return jsonify({"error": "Acceso denegado"}), 403  # Bloquear acceso
+
     hotel = Hoteles.query.get(id)
     
     if not hotel:
-        return jsonify({"error": "Hotel no encontrado"}), 400
+        return jsonify({"error": "Hotel no encontrado"}), 404
     
     data = request.get_json()
     hotel.nombre = data.get("nombre", hotel.nombre)
@@ -117,6 +137,9 @@ def actualizar_hoteles(id):
     db.session.commit()
    
     return jsonify(hotel.serialize()), 200
+
+
+
 
 @api.route('/theme', methods=['GET'])
 def get_themes():
@@ -237,26 +260,26 @@ def actualizar_category(id):
 
     category.nombre = data.get("nombre", category.nombre)
     db.session.commit()
-
-    # if "nombre" in data:
-    #     category.nombre = data["nombre"]
-
-    # try:
-    #     db.session.commit()
-    # except Exception as e:
-    #     db.session.rollback()  # Si ocurre un error, deshacer los cambios
-    #     return jsonify({"error": f"Error al actualizar la categoría: {str(e)}"}), 500
-
+   
     return jsonify(category.serialize()), 200  # Código 200 para solicitud exitosa
 
 # route para Branches
+
 # Obtener todos los branches
 @api.route('/branches', methods=['GET'])
+@jwt_required()
 def obtener_branches():
-    branches = Branches.query.all()  # Obtener todos los branches
-    branches_serialize = [branch.serialize() for branch in branches]  # Serializar cada branch
-   
-    return jsonify(branches_serialize), 200  # Retornar los datos serializados como JSON
+    hotel_id = get_jwt_identity()
+    hotel = Hoteles.query.get(hotel_id)
+
+    if not hotel:
+        return jsonify({"error": "Hotel no encontrado"}), 404
+
+    branches = Branches.query.filter_by(hotel_id=hotel.id).all()
+
+    return jsonify([branch.serialize() for branch in branches]), 200
+
+
 
 # Obtener un branch por ID
 @api.route('/branches/<int:id>', methods=['GET'])
@@ -267,46 +290,73 @@ def get_branch(id):
 
 # Crear un nuevo branch
 @api.route('/branches', methods=['POST'])
+@jwt_required()
 def crear_branch():
-    data = request.get_json()
-   
-    nuevo_branch = Branches(
-        nombre=data["nombre"],
-        direccion=data["direccion"],
-        longitud=data["longitud"],
-        latitud=data["latitud"],
-        hotel_id=data["hotel_id"]
-    )
+    hotel_id = get_jwt_identity()
+    hotel = Hoteles.query.get(hotel_id)
 
-    db.session.add(nuevo_branch)
-    db.session.commit()
-    
-    return jsonify(nuevo_branch.serialize()), 201
+    data = request.get_json()
+    print("Datos recibidos del frontend:", data)
+    print("Hotel actual:", hotel.serialize() if hotel else "No encontrado")
+
+    if not hotel:
+        return jsonify({"error": "Hotel no encontrado"}), 404
+
+    try:
+        nuevo_branch = Branches(
+            nombre=data["nombre"],
+            direccion=data["direccion"],
+            # Opcionales ahora, si no llegan desde el frontend:
+            latitud=float(data.get("latitud", 0)),
+            longitud=float(data.get("longitud", 0)),
+            hotel_id=hotel.id
+        )
+
+        db.session.add(nuevo_branch)
+        db.session.commit()
+
+        return jsonify(nuevo_branch.serialize()), 201
+
+    except Exception as e:
+        print("Error al crear branch:", e)
+        return jsonify({"error": str(e)}), 500
+
+
+
 
 # Actualizar un branch existente
 @api.route('/branches/<int:id>', methods=['PUT'])
+@jwt_required()
 def actualizar_branch(id):
-    branch = Branches.query.get_or_404(id)
+    hotel_id = get_jwt_identity()
+    branch = Branches.query.get(id)
+
+    if not branch or branch.hotel_id != int(hotel_id):
+        return jsonify({"error": "Acceso denegado"}), 403  # Solo el dueño puede editar
+
     data = request.get_json()
     branch.nombre = data.get("nombre", branch.nombre)
     branch.direccion = data.get("direccion", branch.direccion)
-    branch.longitud = data.get("longitud", branch.longitud)
-    branch.latitud = data.get("latitud", branch.latitud)
-    branch.hotel_id = data.get("hotel_id", branch.hotel_id)
-    
     db.session.commit()
 
     return jsonify(branch.serialize()), 200
 
+
 # Eliminar un branch
 @api.route('/branches/<int:id>', methods=['DELETE'])
+@jwt_required()
 def delete_branch(id):
-    branch = Branches.query.get_or_404(id)
+    hotel_id = get_jwt_identity()
+    branch = Branches.query.get(id)
+
+    if not branch or branch.hotel_id != int(hotel_id):
+        return jsonify({"error": "Acceso denegado"}), 403  # Solo el dueño puede eliminar
 
     db.session.delete(branch)
     db.session.commit()
-    
-    return jsonify({"message": "Branch eliminado"}), 200
+
+    return jsonify({"message": "Sucursal eliminada"}), 200
+
 
 @api.route('/hoteltheme', methods=['POST'])
 def create_hoteltheme():
@@ -430,111 +480,137 @@ def obtener_rooms_id(id):
     if not room:
         return jsonify({"message": "RoomTheme not found"}), 404
     return jsonify(room.serialize()), 200
+
   
 # Rutas para Maintenance
-
-# Ruta para obtener todos los trabajadores de mantenimiento
 @api.route('/maintenance', methods=['GET'])
+@jwt_required()
 def get_maintenance():
-    maintenance = Maintenance.query.all()
+    hotel_id = get_jwt_identity()
     
-    return jsonify([maint.serialize() for maint in maintenance]), 200
-
-# Ruta para obtener un trabajador de mantenimiento por ID
-@api.route('/maintenance/<int:id>', methods=['GET'])
-def get_maint(id):
-    maint = Maintenance.query.get_or_404(id)
+    # Buscar todos los técnicos de mantenimiento asociados al hotel autenticado
+    maintenances = Maintenance.query.filter_by(hotel_id=hotel_id).all()
     
-    return jsonify([maint.serialize() for maint in maint]), 200
-
-# Ruta para crear un nuevo trabajador de mantenimiento
-from flask import jsonify
+    # Verificar si hay registros antes de serializar
+    if not maintenances:
+        return jsonify({"error": "No hay técnicos de mantenimiento registrados para este hotel"}), 404
+    
+    return jsonify([maintenance.serialize() for maintenance in maintenances]), 200
 
 @api.route('/maintenance', methods=['POST'])
+@jwt_required()
 def create_maintenance():
+    hotel_id = int(get_jwt_identity())
     data = request.get_json()
-    
-    # Verificamos que los datos estén presentes
-    if not data.get('nombre') or not data.get('email') or not data.get('password') or not data.get('hotel_id') or not data.get('branch_id'):
-        return jsonify({"error": "Missing data"}), 400
-    
-    # Verificamos si el hotel existe
-    hotel = Hoteles.query.get(data['hotel_id'])
-    if not hotel:
-        return jsonify({"error": "Hotel not found"}), 404
-    
-    # Verificamos si la sucursal existe
+
+    if not data:
+        return jsonify({"error": "No se proporcionaron datos"}), 400
+
+    required_fields = ['nombre', 'email', 'password', 'branch_id']
+    if not all(field in data and data[field] for field in required_fields):
+        return jsonify({"error": "Faltan datos obligatorios"}), 400
+
     branch = Branches.query.get(data['branch_id'])
-    if not branch:
-        return jsonify({"error": "Branch not found"}), 404
+    if not branch or branch.hotel_id != hotel_id:
+        return jsonify({"error": "Sucursal no encontrada o no pertenece al hotel autenticado"}), 403
     
+
     nuevo_maint = Maintenance(
         nombre=data['nombre'],
         email=data['email'],
-        password=data['password'],
-        hotel_id=data['hotel_id'],
+        password=data['password'],  # Recuerda: en producción debes cifrar esto
+        hotel_id=hotel_id,  # 👈 Muy importante
         branch_id=data['branch_id']
+        
     )
-    
+
     db.session.add(nuevo_maint)
     db.session.commit()
-    
+
     return jsonify(nuevo_maint.serialize()), 201
 
 
-# Ruta para actualizar un trabajador de mantenimiento
 @api.route('/maintenance/<int:id>', methods=['PUT'])
+@jwt_required()
 def update_maintenance(id):
+    hotel_id = get_jwt_identity()
     maint = Maintenance.query.get_or_404(id)
     data = request.get_json()
     
-    # Verificamos si el hotel existe
-    hotel = Hoteles.query.get(data['hotel_id'])
-    if not hotel:
-        return jsonify({"error": "Hotel not found"}), 404
-    
-    # Verificamos si la sucursal existe
+    if maint.hotel_id != hotel_id:
+        return jsonify({"error": "No tienes permiso para actualizar este trabajador"}), 403
+
     branch = Branches.query.get(data['branch_id'])
-    if not branch:
-        return jsonify({"error": "Branch not found"}), 404
-    
+    if not branch or branch.hotel_id != hotel_id:
+        return jsonify({"error": "Branch not found or does not belong to this hotel"}), 404
+
     maint.nombre = data['nombre']
     maint.email = data['email']
     maint.password = data['password']
-    maint.hotel_id = data['hotel_id']
     maint.branch_id = data['branch_id']
-    
+
     db.session.commit()
-   
+    
     return jsonify(maint.serialize())
 
-
-# Ruta para eliminar un trabajador de mantenimiento
 @api.route('/maintenance/<int:id>', methods=['DELETE'])
+@jwt_required()
 def delete_maintenance(id):
+    hotel_id = get_jwt_identity()
     maint = Maintenance.query.get_or_404(id)
     
+    if maint.hotel_id != hotel_id:
+        return jsonify({"error": "No tienes permiso para eliminar este trabajador"}), 403
+
     db.session.delete(maint)
     db.session.commit()
     
     return jsonify({"message": "Trabajador de mantenimiento eliminado con éxito"}), 200
 
-# houseKeeper
+
+# Ruta para housekepeers
+
+@api.route('/housekeepers', methods=['GET'])
+@jwt_required()
+def get_housekeepers():
+    hotel_id = get_jwt_identity()
+    housekeepers = HouseKeeper.query.filter_by(hotel_id=hotel_id).all()
+    
+    return jsonify([housekeeper.serialize() for housekeeper in housekeepers]), 200
+
+@api.route('/housekeepers/<int:id>', methods=['GET'])
+@jwt_required()
+def get_housekeeper(id):
+    hotel_id = get_jwt_identity()
+    housekeeper = HouseKeeper.query.get_or_404(id)
+
+    if housekeeper.hotel_id != hotel_id:
+        return jsonify({"error": "No tienes permiso para ver este Housekeeper"}), 403
+
+    return jsonify(housekeeper.serialize()), 200
+
+
 
 @api.route('/housekeepers', methods=['POST'])
+@jwt_required()
 def create_housekeeper():
+    hotel_id = get_jwt_identity()  # Obtener el ID del hotel autenticado
     data = request.get_json()
 
-    # Verificamos que los datos estén presentes
-    if not data.get('nombre') or not data.get('email') or not data.get('password'):
+    if not data.get('nombre') or not data.get('email') or not data.get('password') or not data.get('id_branche'):
         return jsonify({"error": "Missing data"}), 400
+
+    # Verificar si la sucursal pertenece al hotel autenticado
+    branch = Branches.query.get(data['id_branche'])
+    if not branch or branch.hotel_id != hotel_id:
+        return jsonify({"error": "Branch not found or does not belong to this hotel"}), 403
 
     new_housekeeper = HouseKeeper(
         nombre=data['nombre'],
         email=data['email'],
-        password=data['password'],  # En un proyecto real deberías cifrar la contraseña
-        hotel_id=data['hotel_id'],
-        id_branche=data.get('id_branche')
+        password=data['password'],  # ⚠️ Cifra la contraseña antes de guardarla en producción
+        hotel_id=hotel_id,
+        id_branche=data['id_branche']
     )
 
     db.session.add(new_housekeeper)
@@ -542,72 +618,253 @@ def create_housekeeper():
 
     return jsonify(new_housekeeper.serialize()), 201
 
-
-# Obtener todos los housekeepers
-@api.route('/housekeepers', methods=['GET'])
-def get_housekeepers():
-    housekeepers = HouseKeeper.query.all()
-    return jsonify([housekeeper.serialize() for housekeeper in housekeepers]), 200
-
-
-# Obtener un housekeeper por ID
-@api.route('/housekeepers/<int:id>', methods=['GET'])
-def get_housekeeper(id):
-    housekeeper = HouseKeeper.query.get(id)
-    if not housekeeper:
-        return jsonify({"error": "Housekeeper not found"}), 404
-    return jsonify(housekeeper.serialize()), 200
-
-
-# Actualizar un housekeeper
 @api.route('/housekeepers/<int:id>', methods=['PUT'])
+@jwt_required()
 def update_housekeeper(id):
-    housekeeper = HouseKeeper.query.get(id)
-    if not housekeeper:
-        return jsonify({"error": "Housekeeper not found"}), 404
+    hotel_id = get_jwt_identity()
+    housekeeper = HouseKeeper.query.get_or_404(id)
+
+    if housekeeper.hotel_id != hotel_id:
+        return jsonify({"error": "No tienes permiso para modificar este Housekeeper"}), 403
 
     data = request.get_json()
 
     housekeeper.nombre = data.get('nombre', housekeeper.nombre)
     housekeeper.email = data.get('email', housekeeper.email)
     housekeeper.password = data.get('password', housekeeper.password)
-    housekeeper.hotel = data.get('hotel', housekeeper.hotel)
     housekeeper.id_branche = data.get('id_branche', housekeeper.id_branche)
 
     db.session.commit()
 
     return jsonify(housekeeper.serialize()), 200
-
-
-# Eliminar un housekeeper
+git statu
 @api.route('/housekeepers/<int:id>', methods=['DELETE'])
+@jwt_required()
 def delete_housekeeper(id):
-    housekeeper = HouseKeeper.query.get(id)
-    if not housekeeper:
-        return jsonify({"error": "Housekeeper not found"}), 404
+    hotel_id = get_jwt_identity()
+    housekeeper = HouseKeeper.query.get_or_404(id)
+
+    if housekeeper.hotel_id != hotel_id:
+        return jsonify({"error": "No tienes permiso para eliminar este Housekeeper"}), 403
 
     db.session.delete(housekeeper)
     db.session.commit()
 
-    return jsonify({"message": "Housekeeper deleted successfully"}), 200
+    return jsonify({"message": "Housekeeper eliminado con éxito"}), 200
 
-@api.route('/loginHouseKeeper', methods=['POST'])
-def login_housekeeper():
+
+# Ruta para obtener las tareas de los trabajadores de mantenimiento
+@api.route('/maintenancetasks', methods=['GET'])
+@jwt_required()
+def get_all_maintenance_tasks():
+    hotel_id = int(get_jwt_identity())
+    # Se asume que cada tarea de mantenimiento está asociada a un técnico de mantenimiento,
+    # y que el técnico tiene el campo hotel_id.
+    tasks = MaintenanceTask.query.join(Maintenance).filter(Maintenance.hotel_id == hotel_id).all()
+    return jsonify([task.serialize() for task in tasks]), 200
+
+@api.route('/maintenancetasks/<int:id>', methods=['GET'])
+def get_maintenance_task(id):
+
+    maintenance_task = MaintenanceTask.query.get(id)
+    if not maintenance_task:
+        return jsonify({"message": "Tarea de mantenimiento no encontrada"}), 404
+    return jsonify(maintenance_task.serialize()), 200
+
+@api.route('/maintenancetasks', methods=['POST'])
+@jwt_required()
+def create_maintenance_task():
     data = request.get_json()
-    email = data.get('email')
-    password = data.get('password')
-    if not email or not password:
-        return jsonify({"error": "Missing email or password"}), 400
-    housekeeper = HouseKeeper.query.filter_by(email=email).first()
-    if not housekeeper:
-        return jsonify({"error": "Invalid housekeeper credentials"}), 401
-    if housekeeper.password != password:
-        return jsonify({"error": "Invalid password credentials"}), 401
-    token = jwt.encode({
-        'housekeeper_id': housekeeper.id,
-        'exp': datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=5)
-    }, SECRET_KEY, algorithm='HS256')
-    return jsonify({'token': token}), 200
+    hotel_id = int(get_jwt_identity())
+    
+    # Aquí se podría validar que el mantenimiento (maintenance_id) enviado
+    # pertenezca al hotel autenticado:
+    maintenance_id = data.get('maintenance_id')
+    maintenance = Maintenance.query.get(maintenance_id)
+    if not maintenance or maintenance.hotel_id != hotel_id:
+        return jsonify({"message": "Maintenance not found or access denied"}), 403
+
+    try:
+        new_task = MaintenanceTask(
+            nombre=data.get('nombre'),
+            photo=data.get('photo'),
+            condition=data.get('condition'),
+            room_id=data.get('room_id'),
+            maintenance_id=maintenance_id,
+            housekeeper_id=data.get('housekeeper_id'),
+            category_id=data.get('category_id')
+        )
+        db.session.add(new_task)
+        db.session.commit()
+        return jsonify(new_task.serialize()), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": "Error creating maintenance task", "error": str(e)}), 400
+
+@api.route('/maintenancetasks/<int:id>', methods=['PUT'])
+@jwt_required()
+def update_maintenance_task(id):
+    hotel_id = int(get_jwt_identity())
+    maintenance_task = MaintenanceTask.query.get(id)
+    if not maintenance_task:
+        return jsonify({"message": "Maintenance task not found"}), 404
+
+    # Validar que la tarea pertenezca al hotel autenticado a través del técnico asociado:
+    if maintenance_task.maintenance.hotel_id != hotel_id:
+        return jsonify({"message": "Access denied"}), 403
+
+    data = request.get_json()
+    try:
+        maintenance_task.nombre = data.get('nombre', maintenance_task.nombre)
+        maintenance_task.photo = data.get('photo', maintenance_task.photo)
+        maintenance_task.condition = data.get('condition', maintenance_task.condition)
+        maintenance_task.room_id = data.get('room_id', maintenance_task.room_id)
+        maintenance_task.maintenance_id = data.get('maintenance_id', maintenance_task.maintenance_id)
+        maintenance_task.housekeeper_id = data.get('housekeeper_id', maintenance_task.housekeeper_id)
+        maintenance_task.category_id = data.get('category_id', maintenance_task.category_id)
+        db.session.commit()
+        return jsonify(maintenance_task.serialize()), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": "Error updating maintenance task", "error": str(e)}), 400
+
+@api.route('/maintenancetasks/<int:id>', methods=['DELETE'])
+@jwt_required()
+def delete_maintenance_task(id):
+    hotel_id = int(get_jwt_identity())
+    maintenance_task = MaintenanceTask.query.get(id)
+    if not maintenance_task:
+        return jsonify({"message": "Maintenance task not found"}), 404
+
+    if maintenance_task.maintenance.hotel_id != hotel_id:
+        return jsonify({"message": "Access denied"}), 403
+
+    try:
+        db.session.delete(maintenance_task)
+        db.session.commit()
+        return jsonify({"message": "Maintenance task deleted successfully"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": "Error deleting maintenance task", "error": str(e)}), 400
+
+
+
+# houseKeeper_task
+# Obtener todos los housekeepers_task
+@api.route('/housekeeper_tasks', methods=['GET'])
+@jwt_required()
+def get_all_housekeeper_tasks():
+    hotel_id = int(get_jwt_identity())
+    # Se asume que cada tarea de housekeeper está asociada a un housekeeper
+    # y que el housekeeper tiene el campo hotel_id.
+    tasks = HouseKeeperTask.query.join(HouseKeeper).filter(HouseKeeper.hotel_id == hotel_id).all()
+    return jsonify([task.serialize() for task in tasks]), 200
+
+@api.route('/housekeeper_task/<int:id>', methods=['PUT'])
+@jwt_required()
+def update_housekeeper_task(id):
+    hotel_id = int(get_jwt_identity())
+    task = HouseKeeperTask.query.get(id)
+    if not task:
+        return jsonify({"error": "HouseKeeperTask not found"}), 404
+
+    # Verificar que el housekeeper asociado a la tarea pertenezca al hotel autenticado
+    if task.housekeeper.hotel_id != hotel_id:
+        return jsonify({"error": "Access denied"}), 403
+
+    data = request.get_json()
+    try:
+        if data.get('nombre'):
+            task.nombre = data.get('nombre')
+        if data.get('photo'):
+            task.photo = data.get('photo')
+        if data.get('condition'):
+            task.condition = data.get('condition')
+        if data.get('assignment_date'):
+            task.assignment_date = data.get('assignment_date')
+        if data.get('submission_date'):
+            task.submission_date = data.get('submission_date')
+        if data.get('id_room'):
+            task.id_room = data.get('id_room')
+        if data.get('id_housekeeper'):
+            # Verificar que el nuevo housekeeper también pertenezca al hotel autenticado
+            new_housekeeper = HouseKeeper.query.get(data.get('id_housekeeper'))
+            if not new_housekeeper or new_housekeeper.hotel_id != hotel_id:
+                return jsonify({"error": "Access denied for the new housekeeper"}), 403
+            task.id_housekeeper = data.get('id_housekeeper')
+        db.session.commit()
+        return jsonify(task.serialize()), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Error updating housekeeper task: {str(e)}"}), 400
+
+@api.route('/housekeeper_task/<int:id>', methods=['DELETE'])
+@jwt_required()
+def delete_housekeeper_task(id):
+    hotel_id = int(get_jwt_identity())
+    task = HouseKeeperTask.query.get(id)
+    if not task:
+        return jsonify({"error": "HouseKeeperTask not found"}), 404
+
+    if task.housekeeper.hotel_id != hotel_id:
+        return jsonify({"error": "Access denied"}), 403
+
+    try:
+        db.session.delete(task)
+        db.session.commit()
+        return jsonify({"message": "HouseKeeperTask deleted successfully"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Error deleting housekeeper task: {str(e)}"}), 400
+
+@api.route('/housekeeper_task', methods=['POST'])
+@jwt_required()
+def create_housekeeper_task():
+    data = request.get_json()
+    
+    # Validar campos requeridos
+    required_fields = ['nombre', 'photo', 'condition', 'assignment_date', 'submission_date', 'id_room', 'id_housekeeper']
+    for field in required_fields:
+        if not data.get(field):
+            return jsonify({"error": f"Missing required data: {field}"}), 400
+
+    # Verificar que el room existe
+    room = Room.query.get(data.get('id_room'))
+    if not room:
+        return jsonify({"error": "Room not found"}), 404
+
+    # Verificar que el housekeeper existe y pertenece al hotel autenticado
+    hotel_id = int(get_jwt_identity())
+    housekeeper = HouseKeeper.query.get(data.get('id_housekeeper'))
+    if not housekeeper or housekeeper.hotel_id != hotel_id:
+        return jsonify({"error": "Invalid housekeeper or access denied"}), 403
+
+    # Crear nueva tarea de HouseKeeperTask
+    new_task = HouseKeeperTask(
+        nombre=data['nombre'],
+        photo=data['photo'],
+        condition=data['condition'],
+        assignment_date=data['assignment_date'],
+        submission_date=data['submission_date'],
+        id_room=data['id_room'],
+        id_housekeeper=data['id_housekeeper']
+    )
+
+    db.session.add(new_task)
+    db.session.commit()
+
+    return jsonify(new_task.serialize()), 201
+
+
+# READ a single HouseKeeperTask by ID
+@api.route('/housekeeper_task/<int:id>', methods=['GET'])
+def get_housekeeper_task(id):
+    task = HouseKeeperTask.query.get(id)
+    
+    if task is None:
+        return jsonify({"error": "HouseKeeperTask not found"}), 404
+    
+    return jsonify(task.serialize()), 200
 
 @api.route('/loginMaintenance', methods=['POST'])
 def login_maintenance():
@@ -627,194 +884,7 @@ def login_maintenance():
     }, SECRET_KEY, algorithm='HS256')
     return jsonify({'token': token}), 200
 
-@api.route('/housekeeper_task', methods=['POST'])
-def create_housekeeper_task():
-    data = request.get_json()
-    
-    # Validate if all required fields are in the request
-    if not data.get('nombre') or not data.get('photo') or not data.get('condition') or not data.get('assignment_date') or not data.get('submission_date'):
-        return jsonify({"error": "Missing required data"}), 400
 
-    # Check if room and housekeeper IDs are valid
-    room = Room.query.get(data.get('id_room'))
-    housekeeper = HouseKeeper.query.get(data.get('id_housekeeper'))
-
-    if not room or not housekeeper:
-        return jsonify({"error": "Invalid room or housekeeper ID"}), 404
-
-    # Create new HouseKeeperTask
-    new_task = HouseKeeperTask(
-        nombre=data['nombre'],
-        photo=data['photo'],
-        condition=data['condition'],
-        assignment_date=data['assignment_date'],
-        submission_date=data['submission_date'],
-        id_room=data['id_room'],
-        id_housekeeper=data['id_housekeeper']
-    )
-
-    db.session.add(new_task)
-    db.session.commit()
-
-    return jsonify(new_task.serialize()), 201
-
-# READ all HouseKeeperTasks
-@api.route('/housekeeper_tasks', methods=['GET'])
-def get_all_housekeeper_tasks():
-    tasks = HouseKeeperTask.query.all()
-    return jsonify([task.serialize() for task in tasks]), 200
-
-# READ a single HouseKeeperTask by ID
-@api.route('/housekeeper_task/<int:id>', methods=['GET'])
-def get_housekeeper_task(id):
-    task = HouseKeeperTask.query.get(id)
-    
-    if task is None:
-        return jsonify({"error": "HouseKeeperTask not found"}), 404
-    
-    return jsonify(task.serialize()), 200
-
-# UPDATE a HouseKeeperTask by ID
-@api.route('/housekeeper_task/<int:id>', methods=['PUT'])
-def update_housekeeper_task(id):
-    task = HouseKeeperTask.query.get(id)
-
-    if task is None:
-        return jsonify({"error": "HouseKeeperTask not found"}), 404
-    
-    data = request.get_json()
-
-    # Update fields if they are provided in the request
-    if data.get('nombre'):
-        task.nombre = data['nombre']
-    if data.get('photo'):
-        task.photo = data['photo']
-    if data.get('condition'):
-        task.condition = data['condition']
-    if data.get('assignment_date'):
-        task.assignment_date = data['assignment_date']
-    if data.get('submission_date'):
-        task.submission_date = data['submission_date']
-    if data.get('id_room'):
-        task.id_room = data['id_room']
-    if data.get('id_housekeeper'):
-        task.id_housekeeper = data['id_housekeeper']
-
-    db.session.commit()
-
-    return jsonify(task.serialize()), 200
-
-# DELETE a HouseKeeperTask by ID
-@api.route('/housekeeper_task/<int:id>', methods=['DELETE'])
-def delete_housekeeper_task(id):
-    task = HouseKeeperTask.query.get(id)
-    
-    if task is None:
-        return jsonify({"error": "HouseKeeperTask not found"}), 404
-    
-    db.session.delete(task)
-    db.session.commit()
-
-    return jsonify({"message": "HouseKeeperTask deleted successfully"}), 200
-
-@api.route('/maintenancetasks', methods=['GET'])
-def get_all_maintenance_tasks():
-    """Obtener todas las tareas de mantenimiento"""
-    maintenance_tasks = MaintenanceTask.query.all()
-    return jsonify([task.serialize() for task in maintenance_tasks]), 200
-
-
-@api.route('/maintenancetasks/<int:id>', methods=['GET'])
-def get_maintenance_task(id):
-    """Obtener una tarea de mantenimiento específica por ID"""
-    maintenance_task = MaintenanceTask.query.get(id)
-    if not maintenance_task:
-        return jsonify({"message": "Tarea de mantenimiento no encontrada"}), 404
-    return jsonify(maintenance_task.serialize()), 200
-
-@api.route('/maintenancetasks', methods=['POST'])
-def create_maintenance_task():
-    data = request.get_json()
-
-    try:
-        nombre = data.get('nombre')
-        photo = data.get('photo', None)
-        condition = data.get('condition', None)
-        room_id = data.get('room_id', None)
-        maintenance_id = data.get('maintenance_id', None)
-        housekeeper_id = data.get('housekeeper_id', None)
-        category_id = data.get('category_id', None)
-
-        new_task = MaintenanceTask(
-            nombre=nombre,
-            photo=photo,
-            condition=condition,
-            room_id=room_id,
-            maintenance_id=maintenance_id,
-            housekeeper_id=housekeeper_id,
-            category_id=category_id
-        )
-
-        db.session.add(new_task)
-        db.session.commit()
-
-        return jsonify(new_task.serialize()), 201
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"message": "Error al crear la tarea de mantenimiento", "error": str(e)}), 400
-
-@api.route('/maintenancetasks/<int:id>', methods=['PUT'])
-def update_maintenance_task(id):
-    """Actualizar una tarea de mantenimiento existente"""
-    maintenance_task = MaintenanceTask.query.get(id)
-
-    if not maintenance_task:
-        return jsonify({"message": "Tarea de mantenimiento no encontrada"}), 404
-
-    data = request.get_json()
-
-    try:
-        maintenance_task.nombre = data.get('nombre', maintenance_task.nombre)
-        maintenance_task.photo = data.get('photo', maintenance_task.photo)
-        maintenance_task.condition = data.get('condition', maintenance_task.condition)
-        maintenance_task.room_id = data.get('room_id', maintenance_task.room_id)
-        maintenance_task.maintenance_id = data.get('maintenance_id', maintenance_task.maintenance_id)
-        maintenance_task.housekeeper_id = data.get('housekeeper_id', maintenance_task.housekeeper_id)
-        maintenance_task.category_id = data.get('category_id', maintenance_task.category_id)
-
-        db.session.commit()
-
-        return jsonify(maintenance_task.serialize()), 200
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"message": "Error al actualizar la tarea de mantenimiento", "error": str(e)}), 400
-
-@api.route('/maintenancetasks/<int:id>', methods=['DELETE'])
-def delete_maintenance_task(id):
-    """Eliminar una tarea de mantenimiento"""
-    maintenance_task = MaintenanceTask.query.get(id)
-
-    if not maintenance_task:
-        return jsonify({"message": "Tarea de mantenimiento no encontrada"}), 404
-
-    try:
-        db.session.delete(maintenance_task)
-        db.session.commit()
-        return jsonify({"message": "Tarea de mantenimiento eliminada exitosamente"}), 200
-    except Exception as e:
-        db.session.rollback()
-
-        return jsonify({"message": "Error al eliminar la tarea de mantenimiento", "error": str(e)}), 400
-
-
-# @api.route('/rooms', methods=['GET'])
-# def get_all_rooms():
-#     rooms = Room.query.all()
-#     return jsonify([room.serialize() for room in rooms]), 200
-
-# crear un login de hotel
 
 @api.route("/loginhotel", methods=["POST"])
 def loginhotel():
@@ -823,16 +893,15 @@ def loginhotel():
     
     hotel = Hoteles.query.filter_by(email=email).first()
     
-     # Si no se encuentra el hotel
-    if hotel is None:
-        return jsonify({"msg": "Correo no encontrado"}), 401
-
-    # Verificar la contraseña (deberías usar hashing para contraseñas en producción)
-    if password != hotel.password:
+    if hotel is None or password != hotel.password:
         return jsonify({"msg": "Correo o contraseña incorrectos"}), 401
+
+    # Generar token con "hotel_id"
+    access_token = create_access_token(identity=str(hotel.id))  # Convertimos el ID a string
     
-    access_token = create_access_token(identity=email)
     return jsonify(access_token=access_token), 200
+
+
 
 # crear signup de hotel
 @api.route("/signuphotel", methods=["POST"])
@@ -863,3 +932,6 @@ def signuphotel():
 def privatehotel():
     current_user = get_jwt_identity() #obtiene la identidad del usuario desde el token
     return jsonify(logget_in_as=current_user), 200
+
+
+app.register_blueprint(api, url_prefix='/api')

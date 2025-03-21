@@ -15,11 +15,49 @@ const Hoteles = () => {
 
   // Obtener lista de hoteles al cargar el componente
   useEffect(() => {
-    fetch(process.env.BACKEND_URL + "/api/hoteles")
-      .then((response) => response.json())
-      .then((data) => setHoteles(data))
-      .catch((error) => console.error("Error al obtener hoteles:", error));
-  }, []); // solo se ejecuta una vez al montar el componente
+    const fetchHoteles = async () => {
+      const token = localStorage.getItem("token"); // Obtener el token
+
+      console.log(" Enviando solicitud a:", process.env.BACKEND_URL + "/api/hoteles");
+      console.log(" Token en uso:", token);
+  
+      if (!token) {
+        console.error("No hay token disponible. Redirigiendo a login.");
+        return; // Evitar que la solicitud falle
+      }
+  
+      try {
+        const response = await fetch(process.env.BACKEND_URL + "/api/hoteles", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+  
+        console.log(" Respuesta completa:", response);
+  
+        if (!response.ok) {
+          if (response.status === 401) {
+            console.error("Token inválido o expirado. Redirigiendo a login.");
+            // Redirigir al login si el token es inválido
+            navigate("/login");
+          }
+          throw new Error(` Error ${response.status}: ${response.statusText}`);
+        }
+  
+        const data = await response.json();
+        console.log(" Datos recibidos en React:", data);
+  
+        setHoteles(Array.isArray(data) ? data : [data]); // Asegurar que sea un array
+      } catch (error) {
+        console.error(" Error al obtener hoteles:", error);
+      }
+    };
+  
+    fetchHoteles();
+  }, []);
+  
 
   // Manejar el envío del formulario (crear o editar)
   const handleSubmit = (e) => {
@@ -59,23 +97,31 @@ const Hoteles = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...hotelData, password }),
-      })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error("Error al crear el hotel");
-          }
-          return response.json();
+    })
+        .then(async (response) => {
+            console.log(" Respuesta completa:", response);
+            const responseData = await response.json();
+            console.log(" Respuesta JSON:", responseData);
+    
+            if (!response.ok) {
+                throw new Error(responseData.error || "Error al crear el hotel");
+            }
+            return responseData;
         })
         .then((newHotel) => {
-          setHoteles([...hoteles, newHotel]);
-          setMostrarFormulario(false); // Ocultar formulario después de crear
-          setNombre("");
-          setEmail("");
-          setPassword("");
-          navigate("/listaHoteles"); // Redirigir a la lista de hoteles
+            console.log(" Hotel creado:", newHotel);
+            setHoteles((prevHoteles) => [...(prevHoteles || []), newHotel]);
+            setMostrarFormulario(false);
+            setNombre("");
+            setEmail("");
+            setPassword("");
+            navigate("/listaHoteles");
         })
-        .catch((error) => alert(error.message));
-    }
+        .catch((error) => {
+            console.error("Error al crear hotel:", error.message);
+            alert(error.message);
+        });
+      }    
   };
 
   // Eliminar un hotel
