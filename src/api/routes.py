@@ -279,8 +279,6 @@ def obtener_branches():
 
     return jsonify([branch.serialize() for branch in branches]), 200
 
-
-
 # Obtener un branch por ID
 @api.route('/branches/<int:id>', methods=['GET'])
 def get_branch(id):
@@ -321,9 +319,6 @@ def crear_branch():
         print("Error al crear branch:", e)
         return jsonify({"error": str(e)}), 500
 
-
-
-
 # Actualizar un branch existente
 @api.route('/branches/<int:id>', methods=['PUT'])
 @jwt_required()
@@ -341,7 +336,6 @@ def actualizar_branch(id):
 
     return jsonify(branch.serialize()), 200
 
-
 # Eliminar un branch
 @api.route('/branches/<int:id>', methods=['DELETE'])
 @jwt_required()
@@ -356,7 +350,6 @@ def delete_branch(id):
     db.session.commit()
 
     return jsonify({"message": "Sucursal eliminada"}), 200
-
 
 @api.route('/hoteltheme', methods=['POST'])
 def create_hoteltheme():
@@ -413,15 +406,25 @@ def delete_hoteltheme(id):
 
 # Obtener todas las habitaciones
 @api.route('/rooms', methods=['GET'])
+@jwt_required()
 def obtener_rooms():
-    rooms = Room.query.all()  # Obtener todas las habitaciones
-    room_serialize = [room.serialize() for room in rooms]  # Serializar cada habitacion
-    return jsonify(room_serialize), 200  # Retornar los datos serializados como JSON
+    hotel_id = int(get_jwt_identity())
+
+    # Obtener todas las sucursales de este hotel
+    branches = Branches.query.filter_by(hotel_id=hotel_id).all()
+    branch_ids = [branch.id for branch in branches]
+
+    # Obtener habitaciones que pertenecen a esas sucursales
+    rooms = Room.query.filter(Room.branch_id.in_(branch_ids)).all()
+    room_serialize = [room.serialize() for room in rooms]
+
+    return jsonify(room_serialize), 200
 
 # Crear una nueva habitacion
 @api.route('/rooms', methods=['POST'])
 def crear_room():
     data = request.get_json()
+    
 
     # Validación: Verificar que se reciba el nombre
     if not data.get("nombre"):
@@ -518,10 +521,9 @@ def create_maintenance():
     nuevo_maint = Maintenance(
         nombre=data['nombre'],
         email=data['email'],
-        password=data['password'],  # Recuerda: en producción debes cifrar esto
-        hotel_id=hotel_id,  # 👈 Muy importante
+        password=data['password'], 
+        hotel_id=hotel_id,  # Muy importante
         branch_id=data['branch_id']
-        
     )
 
     db.session.add(nuevo_maint)
@@ -533,39 +535,44 @@ def create_maintenance():
 @api.route('/maintenance/<int:id>', methods=['PUT'])
 @jwt_required()
 def update_maintenance(id):
-    hotel_id = get_jwt_identity()
-    maint = Maintenance.query.get_or_404(id)
+    hotel_id = int(get_jwt_identity())
+    maintenance = Maintenance.query.get_or_404(id)
+
+    print(f"hotel_id token: {hotel_id}")
+    print(f"maintenance.hotel_id: {maintenance.hotel_id}")
+
+    if maintenance.hotel_id != hotel_id:
+        return jsonify({"error": "No tienes permiso para modificar este técnico"}), 403
+
     data = request.get_json()
-    
-    if maint.hotel_id != hotel_id:
-        return jsonify({"error": "No tienes permiso para actualizar este trabajador"}), 403
+    print(data)
 
-    branch = Branches.query.get(data['branch_id'])
-    if not branch or branch.hotel_id != hotel_id:
-        return jsonify({"error": "Branch not found or does not belong to this hotel"}), 404
-
-    maint.nombre = data['nombre']
-    maint.email = data['email']
-    maint.password = data['password']
-    maint.branch_id = data['branch_id']
+    maintenance.nombre = data.get("nombre", maintenance.nombre)
+    maintenance.email = data.get("email", maintenance.email)
+    maintenance.password = data.get("password", maintenance.password)
+    maintenance.branch_id = data.get("branch_id", maintenance.branch_id)
 
     db.session.commit()
-    
-    return jsonify(maint.serialize())
+
+    return jsonify(maintenance.serialize()), 200
+
 
 @api.route('/maintenance/<int:id>', methods=['DELETE'])
 @jwt_required()
 def delete_maintenance(id):
-    hotel_id = get_jwt_identity()
-    maint = Maintenance.query.get_or_404(id)
-    
-    if maint.hotel_id != hotel_id:
-        return jsonify({"error": "No tienes permiso para eliminar este trabajador"}), 403
+    hotel_id = int(get_jwt_identity())
+    maintenance = Maintenance.query.get_or_404(id)
 
-    db.session.delete(maint)
+    print(f"hotel_id token: {hotel_id}")
+    print(f"maintenance.hotel_id: {maintenance.hotel_id}")
+
+    if maintenance.hotel_id != hotel_id:
+        return jsonify({"error": "No tienes permiso para eliminar este técnico"}), 403
+
+    db.session.delete(maintenance)
     db.session.commit()
-    
-    return jsonify({"message": "Trabajador de mantenimiento eliminado con éxito"}), 200
+
+    return jsonify({"message": "Técnico eliminado con éxito"}), 200
 
 
 # Ruta para housekepeers
@@ -594,23 +601,27 @@ def get_housekeeper(id):
 @api.route('/housekeepers', methods=['POST'])
 @jwt_required()
 def create_housekeeper():
-    hotel_id = get_jwt_identity()  # Obtener el ID del hotel autenticado
+    hotel_id = int(get_jwt_identity())
     data = request.get_json()
+   
+    if not data:
+        return jsonify({"error": "No se proporcionaron datos"}), 400
 
-    if not data.get('nombre') or not data.get('email') or not data.get('password') or not data.get('id_branche'):
-        return jsonify({"error": "Missing data"}), 400
+    required_fields = ['nombre', 'email', 'password', 'branch_id']
+    if not all(field in data and data[field] for field in required_fields):
+        return jsonify({"error": "Faltan datos obligatorios"}), 400
 
-    # Verificar si la sucursal pertenece al hotel autenticado
-    branch = Branches.query.get(data['id_branche'])
+    branch = Branches.query.get(data['branch_id'])
     if not branch or branch.hotel_id != hotel_id:
         return jsonify({"error": "Branch not found or does not belong to this hotel"}), 403
 
+    #  Aquí el cambio importante
     new_housekeeper = HouseKeeper(
         nombre=data['nombre'],
         email=data['email'],
-        password=data['password'],  # ⚠️ Cifra la contraseña antes de guardarla en producción
+        password=data['password'],
         hotel_id=hotel_id,
-        id_branche=data['id_branche']
+        id_branche=data['branch_id']  # 👈 adaptado al nombre real del modelo
     )
 
     db.session.add(new_housekeeper)
@@ -618,33 +629,39 @@ def create_housekeeper():
 
     return jsonify(new_housekeeper.serialize()), 201
 
+
 @api.route('/housekeepers/<int:id>', methods=['PUT'])
 @jwt_required()
 def update_housekeeper(id):
     hotel_id = get_jwt_identity()
     housekeeper = HouseKeeper.query.get_or_404(id)
 
-    if housekeeper.hotel_id != hotel_id:
-        return jsonify({"error": "No tienes permiso para modificar este Housekeeper"}), 403
+    data = request.get_json() 
 
-    data = request.get_json()
+    print(data)  
+    if int(housekeeper.hotel_id) != int(hotel_id):
+        return jsonify({"error": "No tienes permiso para modificar este Housekeeper"}), 403
 
     housekeeper.nombre = data.get('nombre', housekeeper.nombre)
     housekeeper.email = data.get('email', housekeeper.email)
     housekeeper.password = data.get('password', housekeeper.password)
-    housekeeper.id_branche = data.get('id_branche', housekeeper.id_branche)
+    housekeeper.id_branche = data.get('branch_id', housekeeper.id_branche)  # 👈 Cuidado con la clave
 
     db.session.commit()
 
     return jsonify(housekeeper.serialize()), 200
-git statu
+
+
 @api.route('/housekeepers/<int:id>', methods=['DELETE'])
 @jwt_required()
 def delete_housekeeper(id):
     hotel_id = get_jwt_identity()
     housekeeper = HouseKeeper.query.get_or_404(id)
 
-    if housekeeper.hotel_id != hotel_id:
+    print(f"hotel_id token: {hotel_id}")
+    print(f"housekeeper.hotel_id: {housekeeper.hotel_id}")
+
+    if int(housekeeper.hotel_id) != int(hotel_id):
         return jsonify({"error": "No tienes permiso para eliminar este Housekeeper"}), 403
 
     db.session.delete(housekeeper)
@@ -687,7 +704,7 @@ def create_maintenance_task():
     try:
         new_task = MaintenanceTask(
             nombre=data.get('nombre'),
-            photo=data.get('photo'),
+            image_url=data.get('image_url'),
             condition=data.get('condition'),
             room_id=data.get('room_id'),
             maintenance_id=maintenance_id,
@@ -716,7 +733,7 @@ def update_maintenance_task(id):
     data = request.get_json()
     try:
         maintenance_task.nombre = data.get('nombre', maintenance_task.nombre)
-        maintenance_task.photo = data.get('photo', maintenance_task.photo)
+        maintenance_task.image_url = data.get('image_url', maintenance_task.photo)
         maintenance_task.condition = data.get('condition', maintenance_task.condition)
         maintenance_task.room_id = data.get('room_id', maintenance_task.room_id)
         maintenance_task.maintenance_id = data.get('maintenance_id', maintenance_task.maintenance_id)
@@ -776,8 +793,8 @@ def update_housekeeper_task(id):
     try:
         if data.get('nombre'):
             task.nombre = data.get('nombre')
-        if data.get('photo'):
-            task.photo = data.get('photo')
+        if data.get('image_url'):
+            task.image_url = data.get('image_url')
         if data.get('condition'):
             task.condition = data.get('condition')
         if data.get('assignment_date'):
@@ -821,9 +838,10 @@ def delete_housekeeper_task(id):
 @jwt_required()
 def create_housekeeper_task():
     data = request.get_json()
+    print(data)
     
     # Validar campos requeridos
-    required_fields = ['nombre', 'photo', 'condition', 'assignment_date', 'submission_date', 'id_room', 'id_housekeeper']
+    required_fields = ['nombre', 'image_url', 'condition', 'assignment_date', 'submission_date', 'id_room', 'id_housekeeper']
     for field in required_fields:
         if not data.get(field):
             return jsonify({"error": f"Missing required data: {field}"}), 400
@@ -842,7 +860,7 @@ def create_housekeeper_task():
     # Crear nueva tarea de HouseKeeperTask
     new_task = HouseKeeperTask(
         nombre=data['nombre'],
-        photo=data['photo'],
+        image_url=data['image_url'],
         condition=data['condition'],
         assignment_date=data['assignment_date'],
         submission_date=data['submission_date'],

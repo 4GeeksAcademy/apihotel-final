@@ -1,16 +1,16 @@
 import React, { useCallback, useContext, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Context } from "../store/appContext";
-import { useNavigate } from "react-router-dom";
 
 const ListaRoom = () => {
   const [rooms, setRooms] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
-  const [eliminando, setEliminando] = useState(null); // ID de la habitación que se está eliminando
+  const [eliminando, setEliminando] = useState(null);
   const { store, actions } = useContext(Context);
+  
   const navigate = useNavigate();
-  // Función para obtener la URL del backend de forma segura
+
   const getBackendUrl = () => {
     const baseUrl = process.env.BACKEND_URL;
     if (!baseUrl) {
@@ -19,6 +19,15 @@ const ListaRoom = () => {
       return null;
     }
     return baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+  };
+
+  // Función para obtener los headers con el token
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem("token");
+    return {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    };
   };
 
   // Obtener habitaciones
@@ -31,18 +40,22 @@ const ListaRoom = () => {
       setError(null);
 
       try {
-        const response = await fetch(`${apiUrl}api/rooms`);
+        const response = await fetch(`${apiUrl}api/rooms`, {
+          headers: getAuthHeaders()
+        });
+
         if (!response.ok) throw new Error("Error al cargar las habitaciones");
 
         let data = await response.json();
 
-        // Si solo viene sucursal_id, obtener los nombres de las sucursales
         for (let room of data) {
           if (room.branch_id) {
-            const sucursalRes = await fetch(`${apiUrl}api/branches/${room.branch_id}`);
+            const sucursalRes = await fetch(`${apiUrl}api/branches/${room.branch_id}`, {
+              headers: getAuthHeaders()
+            });
             if (sucursalRes.ok) {
               const sucursalData = await sucursalRes.json();
-              room.sucursal = sucursalData; // Agregar la sucursal manualmente
+              room.sucursal = sucursalData;
             }
           }
         }
@@ -71,7 +84,7 @@ const ListaRoom = () => {
     try {
       const response = await fetch(`${apiUrl}api/rooms/${id}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders()
       });
 
       if (!response.ok) {
@@ -79,7 +92,6 @@ const ListaRoom = () => {
         throw new Error(errorData.message || "Error al eliminar la habitación.");
       }
 
-      // Eliminar la habitación de la lista
       setRooms((prevRooms) => prevRooms.filter((room) => room.id !== id));
     } catch (error) {
       alert(error.message);
@@ -89,31 +101,40 @@ const ListaRoom = () => {
   }, []);
 
   return (
-     
     <div className="container">
       <div className="d-flex justify-content-center align-items-center mb-4">
-        <Link to="/crearRoom" className="btn" style={{ backgroundColor: "#ac85eb", borderColor: "#B7A7D1" }}>Crear Habitación</Link>
+        <Link to="/crearRoom" className="btn" style={{ backgroundColor: "#ac85eb", borderColor: "#B7A7D1" }}>
+          Crear Habitación
+        </Link>
       </div>
+
       <h2 className="text-center my-3">Lista de Habitaciones</h2>
-      {(
+
+      {error && <div className="alert alert-danger text-center">{error}</div>}
+
+      {cargando ? (
+        <div className="text-center">Cargando habitaciones...</div>
+      ) : (
         <>
           <div className="row bg-light p-2 fw-bold border-bottom">
             <div className="col">Nombre</div>
             <div className="col">Sucursal</div>
             <div className="col text-center">Acciones</div>
           </div>
+
           {rooms?.map((room) => (
             <div key={room.id} className="row p-2 border-bottom align-items-center">
               <div className="col">{room.nombre}</div>
-              <div className="col">
-                {room.sucursal ? room.sucursal.nombre : "Sin sucursal"}
-              </div>
+              <div className="col">{room.sucursal ? room.sucursal.nombre : "Sin sucursal"}</div>
               <div className="col d-flex justify-content-center">
                 <Link to={`/editarRoom/${room.id}`}>
-                  <button className="btn me-3" style={{ backgroundColor: "#ac85eb", borderColor: "#B7A7D1" }}>Editar</button>
+                  <button className="btn me-3" style={{ backgroundColor: "#ac85eb", borderColor: "#B7A7D1" }}>
+                    Editar
+                  </button>
                 </Link>
                 <button
-                  className="btn" style={{ backgroundColor: "#ac85eb", borderColor: "#B7A7D1" }}
+                  className="btn"
+                  style={{ backgroundColor: "#ac85eb", borderColor: "#B7A7D1" }}
                   onClick={() => eliminarRoom(room.id)}
                   disabled={eliminando === room.id}
                 >
@@ -124,9 +145,7 @@ const ListaRoom = () => {
           ))}
         </>
       )}
-
     </div>
-        
   );
 };
 

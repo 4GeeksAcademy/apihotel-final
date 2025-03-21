@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from "react-router-dom";
 import Sidebar from "../component/sidebar";
 
 const HouseKeeperTask = () => {
@@ -14,33 +13,60 @@ const HouseKeeperTask = () => {
   const [rooms, setRooms] = useState([]);
   const [housekeepers, setHousekeepers] = useState([]);
   const [editingId, setEditingId] = useState(null);
+  const [errorMessage, setErrorMessage] = useState('');
+
 
   const backendUrl = process.env.REACT_APP_BACKEND_URL || process.env.BACKEND_URL;
 
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Sesión expirada. Inicia sesión nuevamente.");
+      navigate("/login");
+      return;
+    }
+    loadHouseKeeperTasks();
+    loadRoomsAndHousekeepers();
+  }, []);
+  
   const loadHouseKeeperTasks = async () => {
+    const token = localStorage.getItem("token");
     try {
-      const response = await fetch(`${backendUrl}/api/housekeeper_tasks`);
+      const response = await fetch(`${backendUrl}/api/housekeeper_tasks`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }
+      });
+  
       if (response.ok) {
         const data = await response.json();
         setHouseKeeperTasks(data);
       } else {
-        setErrorMessage('Error al obtener las tareas');
-        console.error('Error al obtener las housekeeper tasks:', response.status);
+        console.error("Error al obtener las tareas:", response.status);
       }
     } catch (error) {
-      setErrorMessage('Error al conectar con el servidor');
-      console.error('Error al obtener las housekeeper tasks:', error);
+      console.error("Error al conectar con el servidor:", error);
     }
   };
-
+  
+   
   // Cargar las habitaciones y los housekeepers (para la lista de opciones)
   const loadRoomsAndHousekeepers = async () => {
+    const token = localStorage.getItem("token");
     try {
       const [roomsResponse, housekeepersResponse] = await Promise.all([
         fetch(`${backendUrl}/api/rooms`),
-        fetch(`${backendUrl}/api/housekeepers`),
+        fetch(`${backendUrl}/api/housekeepers`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          }
+        }),
       ]);
-
+  
       if (roomsResponse.ok && housekeepersResponse.ok) {
         const roomsData = await roomsResponse.json();
         const housekeepersData = await housekeepersResponse.json();
@@ -53,20 +79,22 @@ const HouseKeeperTask = () => {
       console.error("Error al obtener habitaciones o housekeepers:", error);
     }
   };
-
+  
+  
    // Crear una nueva tarea de HouseKeeper
-  const createHouseKeeperTask = async () => {
-    // Validación de campos
+   const createHouseKeeperTask = async () => {
     if (!nombre || !photo || !condition || !assignmentDate || !submissionDate || !idRoom || !idHousekeeper) {
       alert('Por favor, completa todos los campos');
       return;
     }
-
+  
+    const token = localStorage.getItem("token"); 
     try {
       const response = await fetch(`${backendUrl}/api/housekeeper_task`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
         },
         body: JSON.stringify({
           nombre,
@@ -78,22 +106,23 @@ const HouseKeeperTask = () => {
           id_housekeeper: idHousekeeper,
         }),
       });
-
-      // Verificación de respuesta exitosa
-      if (response.ok) {
-        const data = await response.json();  // Obtenemos la respuesta en formato JSON
-        setHouseKeeperTasks((prevTasks) => [...prevTasks, data]);  // Actualizamos el estado con la nueva tarea
-        resetForm();  // Reiniciamos el formulario
-      } else {
-        // En caso de error, tratamos de obtener el mensaje de error
+  
+      if (!response.ok) {
         const errorData = await response.json();
-        console.error('Error al crear la tarea de HouseKeeper:', errorData.message || 'Error desconocido');
+        console.error("❌ Error del backend:", errorData);
+        alert("Error al crear la tarea: " + (errorData.error || errorData.message || "Error desconocido"));
+        return;
       }
+  
+      const data = await response.json();
+      setHouseKeeperTasks((prevTasks) => [...prevTasks, data]);
+      resetForm();
     } catch (error) {
       console.error('Error al crear la tarea de HouseKeeper:', error);
     }
   };
-
+  
+  
 
   // Actualizar una tarea de HouseKeeper
   const updateHouseKeeperTask = async () => {

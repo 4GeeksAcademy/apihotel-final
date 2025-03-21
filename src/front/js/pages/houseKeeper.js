@@ -81,7 +81,8 @@ const HouseKeeper = () => {
       password,
       id_branche: parseInt(branchId)
     };
-
+    console.log("Enviando:", housekeeperData);
+   
     const url = housekeeperSeleccionado
       ? `${backendUrl}/api/housekeepers/${housekeeperSeleccionado.id}`
       : `${backendUrl}/api/housekeepers`;

@@ -1,7 +1,7 @@
 // src/component/editarRoom.js
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Context } from "../store/appContext";
+
 
 const EditarRoom = () => {
   const [nombre, setNombre] = useState("");
@@ -9,7 +9,7 @@ const EditarRoom = () => {
   const [error, setError] = useState(null);
   const { id } = useParams(); // Obtener el ID de la habitación desde la URL
   const navigate = useNavigate();
-  const { store } = useContext(Context);
+
 
   // Función para obtener la URL del backend de forma segura
   const getBackendUrl = () => {
@@ -52,11 +52,13 @@ const EditarRoom = () => {
 
     const apiUrl = getBackendUrl();
     if (!apiUrl) return;
-
+    const token = localStorage.getItem("token");
     try {
       const response = await fetch(`${apiUrl}api/rooms/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+         },
         body: JSON.stringify({ nombre: nombre.trim() }),
       });
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Link } from "react-router-dom";
+import CloudinaryApiHotel from "../component/CloudinaryApiHotel"; // Ajusta la ruta si es necesario
 import Sidebar from "../component/sidebar";
 
 const MaintenanceTask = () => {
@@ -21,7 +21,7 @@ const MaintenanceTask = () => {
   const navigate = useNavigate();
 
   const backendUrl = process.env.REACT_APP_BACKEND_URL || process.env.BACKEND_URL;
-  
+
   // Cargar todas las tareas de mantenimiento
   const loadMaintenanceTasks = async () => {
     try {
@@ -104,7 +104,7 @@ const MaintenanceTask = () => {
 
   // Actualizar una tarea de mantenimiento
   const updateMaintenanceTask = async () => {
-    if (!nombre || !idRoom || !idHousekeeper|| !editingId) {
+    if (!nombre || !idRoom || !idHousekeeper || !editingId) {
       alert('Por favor, completa todos los campos para editar');
       return;
     }
@@ -204,7 +204,7 @@ const MaintenanceTask = () => {
     <>
       <div className="d-flex">
         {/* Sidebar */}
-      <Sidebar/>
+        <Sidebar />
 
         <div className="container">
           <h1>Gestión de Tareas de Mantenimiento</h1>
@@ -224,15 +224,16 @@ const MaintenanceTask = () => {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="photo">Foto</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="photo"
-                    value={photo}
-                    onChange={(e) => setPhoto(e.target.value)}
-                  />
+                  <label>Foto</label>
+                  <CloudinaryApiHotel setImageUrl={setPhoto} setErrorMessage={() => { }} />
+                  {photo && (
+                    <div className="mt-2">
+                      <p>Vista previa:</p>
+                      <img src={photo} alt="Vista previa" style={{ width: "200px", borderRadius: "10px" }} />
+                    </div>
+                  )}
                 </div>
+
 
                 <div className="form-group">
                   <label htmlFor="condition">Condición</label>
@@ -282,7 +283,7 @@ const MaintenanceTask = () => {
                 <div className="form-group">
                   <label htmlFor="idHousekeeper">Housekeeper</label>
                   <select
-                    className="form-control" 
+                    className="form-control"
                     id="idHousekeeper"
                     value={idHousekeeper}
                     onChange={(e) => setIdHousekeeper(e.target.value)}
@@ -369,7 +370,7 @@ const MaintenanceTask = () => {
               ))}
             </tbody>
           </table>
-         
+
         </div>
       </div>
 
