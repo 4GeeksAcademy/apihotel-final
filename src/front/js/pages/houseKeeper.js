@@ -226,8 +226,8 @@ const HouseKeeper = () => {
             <div key={housekeeper.id} className="row p-2 border-bottom align-items-center">
               <div className="col">{housekeeper.nombre}</div>
               <div className="col">{housekeeper.email}</div>
-              <div className="col">{housekeeper.hotel_id}</div>
-              <div className="col">{housekeeper.id_branche}</div>
+              <div className="col">{housekeeper.hotel_nombre}</div>
+              <div className="col">{housekeeper.branch_nombre}</div>
               <div className="col text-center">
                 <button
                   className="btn me-2"

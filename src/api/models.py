@@ -175,16 +175,15 @@ class HouseKeeper(db.Model):
             "hotel_id": self.hotel_id,
             "hotel_nombre": self.hotel.nombre if self.hotel else None,# Agregar el nombre del hotel
             "id_branche": self.id_branche,
-            
-            
+            "branch_nombre": self.branches.nombre if self.branches else None  # Nombre de la sucursal
         }
  
 class HouseKeeperTask(db.Model):
     __tablename__ = 'housekeepertask'
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(120), nullable=False)
-    photo = db.Column(db.String(120), nullable=False)
-    condition = db.Column(db.String(80), nullable=False)
+    photo = db.Column(db.String(120), nullable=True)
+    condition = db.Column(db.String(80), nullable=True)
     assignment_date = db.Column(db.String(80), nullable=False)
     submission_date = db.Column(db.String(80), nullable=False)
     id_room = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=True)
@@ -207,6 +206,7 @@ class HouseKeeperTask(db.Model):
             "id_room": self.id_room,
             "room_nombre": self.room.nombre if self.room else None,
             "id_housekeeper": self.id_housekeeper,
+            "housekeeper_nombre": self.housekeeper.nombre if self.housekeeper else None,  # Nombre del HouseKeeper
         }
     
 class MaintenanceTask(db.Model):

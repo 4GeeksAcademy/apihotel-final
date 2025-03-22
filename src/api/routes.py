@@ -630,9 +630,9 @@ def login_maintenance():
 @api.route('/housekeeper_task', methods=['POST'])
 def create_housekeeper_task():
     data = request.get_json()
-    
-    # Validate if all required fields are in the request
-    if not data.get('nombre') or not data.get('photo') or not data.get('condition') or not data.get('assignment_date') or not data.get('submission_date'):
+
+    # Validate if the required fields are in the request (without photo and condition)
+    if not data.get('nombre') or not data.get('assignment_date') or not data.get('submission_date') or not data.get('id_room') or not data.get('id_housekeeper'):
         return jsonify({"error": "Missing required data"}), 400
 
     # Check if room and housekeeper IDs are valid
@@ -642,11 +642,15 @@ def create_housekeeper_task():
     if not room or not housekeeper:
         return jsonify({"error": "Invalid room or housekeeper ID"}), 404
 
+    # Use default empty strings for optional fields if they are not provided
+    photo = data.get('photo', '')  # Default empty string if not provided
+    condition = data.get('condition', '')  # Default empty string if not provided
+
     # Create new HouseKeeperTask
     new_task = HouseKeeperTask(
         nombre=data['nombre'],
-        photo=data['photo'],
-        condition=data['condition'],
+        photo=photo,
+        condition=condition,
         assignment_date=data['assignment_date'],
         submission_date=data['submission_date'],
         id_room=data['id_room'],
@@ -657,6 +661,7 @@ def create_housekeeper_task():
     db.session.commit()
 
     return jsonify(new_task.serialize()), 201
+
 
 # READ all HouseKeeperTasks
 @api.route('/housekeeper_tasks', methods=['GET'])

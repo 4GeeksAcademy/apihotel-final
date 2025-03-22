@@ -6,8 +6,8 @@ const HouseKeeperTask = () => {
   const [houseKeeperTasks, setHouseKeeperTasks] = useState([]);
   const [nombre, setNombre] = useState('');
   const [photo, setPhoto] = useState('');
-  const [condition, setCondition] = useState('');
-  const [assignmentDate, setAssignmentDate] = useState('');
+  const [condition, setCondition] = useState('Pendiente');
+  const [assignmentDate, setAssignmentDate] = useState(new Date().toISOString().split('T')[0]);
   const [submissionDate, setSubmissionDate] = useState('');
   const [idRoom, setIdRoom] = useState('');
   const [idHousekeeper, setIdHousekeeper] = useState('');
@@ -54,10 +54,10 @@ const HouseKeeperTask = () => {
     }
   };
 
-   // Crear una nueva tarea de HouseKeeper
+  // Crear una nueva tarea de HouseKeeper
   const createHouseKeeperTask = async () => {
     // Validación de campos
-    if (!nombre || !photo || !condition || !assignmentDate || !submissionDate || !idRoom || !idHousekeeper) {
+    if (!nombre || !assignmentDate || !submissionDate || !idRoom || !idHousekeeper) {
       alert('Por favor, completa todos los campos');
       return;
     }
@@ -70,8 +70,8 @@ const HouseKeeperTask = () => {
         },
         body: JSON.stringify({
           nombre,
-          photo,
-          condition,
+          photo: photo || '',
+          condition: condition || '',
           assignment_date: assignmentDate,
           submission_date: submissionDate,
           id_room: idRoom,
@@ -97,7 +97,7 @@ const HouseKeeperTask = () => {
 
   // Actualizar una tarea de HouseKeeper
   const updateHouseKeeperTask = async () => {
-    if (!nombre || !photo || !condition || !assignmentDate || !submissionDate || !editingId || !idRoom || !idHousekeeper) {
+    if (!nombre || !assignmentDate || !submissionDate || !editingId || !idRoom || !idHousekeeper) {
       alert('Por favor, completa todos los campos para editar');
       return;
     }
@@ -110,8 +110,8 @@ const HouseKeeperTask = () => {
         },
         body: JSON.stringify({
           nombre,
-          photo,
-          condition,
+          photo: photo || '',
+          condition: condition || '',
           assignment_date: assignmentDate,
           submission_date: submissionDate,
           id_room: idRoom,
@@ -181,8 +181,8 @@ const HouseKeeperTask = () => {
     const taskToEdit = houseKeeperTasks.find((task) => task.id === id);
     if (taskToEdit) {
       setNombre(taskToEdit.nombre);
-      setPhoto(taskToEdit.photo);
-      setCondition(taskToEdit.condition);
+      setPhoto(taskToEdit.photo || ''); // Si no hay foto, asigna cadena vacía
+      setCondition(taskToEdit.condition || ''); // Si no hay condición, asigna cadena vacía
       setAssignmentDate(taskToEdit.assignment_date);
       setSubmissionDate(taskToEdit.submission_date);
       setIdRoom(taskToEdit.id_room);
@@ -200,7 +200,7 @@ const HouseKeeperTask = () => {
     <>
       <div className="d-flex">
         {/* Sidebar */}
-        <Sidebar/>
+        <Sidebar />
         <div className="container">
           <h1>Gestión de Tareas de HouseKeeper</h1>
 
@@ -220,7 +220,7 @@ const HouseKeeperTask = () => {
                   />
                 </div>
 
-                <div className="form-group">
+                {/* <div className="form-group">
                   <label htmlFor="photo">Foto</label>
                   <input
                     type="text"
@@ -229,10 +229,10 @@ const HouseKeeperTask = () => {
                     value={photo}
                     onChange={(e) => setPhoto(e.target.value)}
                   />
-                </div>
+                </div> */}
 
-                <div className="form-group">
-                  <label htmlFor="condition">Condición</label>
+                {/* <div className="form-group">
+                  <label htmlFor="condition">Estado</label>
                   <input
                     type="text"
                     className="form-control"
@@ -240,9 +240,9 @@ const HouseKeeperTask = () => {
                     value={condition}
                     onChange={(e) => setCondition(e.target.value)}
                   />
-                </div>
+                </div> */}
 
-                <div className="form-group">
+                {/* <div className="form-group">
                   <label htmlFor="assignmentDate">Fecha de Asignación</label>
                   <input
                     type="date"
@@ -251,7 +251,7 @@ const HouseKeeperTask = () => {
                     value={assignmentDate}
                     onChange={(e) => setAssignmentDate(e.target.value)}
                   />
-                </div>
+                </div> */}
 
                 <div className="form-group">
                   <label htmlFor="submissionDate">Fecha de Entrega</label>
@@ -327,11 +327,11 @@ const HouseKeeperTask = () => {
               <thead>
                 <tr>
                   <th>Nombre</th>
-                  <th>Condición</th>
+                  {/* <th>Estado</th> */}
                   <th>Asignación</th>
                   <th>Entrega</th>
-                  <th>ID de Habitación</th> {/* Nueva columna */}
-                  <th>ID de Housekeeper</th> {/* Nueva columna */}
+                  <th>Habitación</th> {/* Nueva columna */}
+                  <th>Housekeeper</th> {/* Nueva columna */}
                   <th>Acciones</th>
                 </tr>
               </thead>
@@ -339,11 +339,11 @@ const HouseKeeperTask = () => {
                 {houseKeeperTasks.map((task) => (
                   <tr key={task.id}>
                     <td>{task.nombre}</td>
-                    <td>{task.condition}</td>
+                    {/* <td>{task.condition}</td> */}
                     <td>{task.assignment_date}</td>
                     <td>{task.submission_date}</td>
-                    <td>{task.id_room}</td> {/* Muestra el ID de la habitación */}
-                    <td>{task.id_housekeeper}</td> {/* Muestra el ID de Housekeeper */}
+                    <td>{task.room_nombre}</td> {/* Muestra el ID de la habitación */}
+                    <td>{task.housekeeper_nombre}</td> {/* Muestra el ID de Housekeeper */}
                     <td>
                       <button
                         className="btn  btn-sm mr-2" style={{ backgroundColor: "#ac85eb", borderColor: "#B7A7D1" }}
