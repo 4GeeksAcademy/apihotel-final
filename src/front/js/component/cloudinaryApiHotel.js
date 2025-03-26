@@ -20,7 +20,7 @@ const CloudinaryApiHotel = ({ setPhotoUrl, setErrorMessage, taskId }) => {
         .then((data) => {
           console.log("Respuesta Cloudinary:", data);
           if (data.secure_url) {
-            setPhotoUrl(taskId, data.secure_url);  // Llamar a setPhotoUrl pasando taskId y la URL
+            setPhotoUrl(data.secure_url);  // Llamar a setPhotoUrl pasando taskId y la URL cmbio (taskId, data.secure_url)
           } else {
             setErrorMessage("No se recibió la URL de la imagen");
           }

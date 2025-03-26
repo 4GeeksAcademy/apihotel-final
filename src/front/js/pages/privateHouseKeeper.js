@@ -10,10 +10,12 @@ const PrivateHouseKeeper = () => {
   const [isRoomSelected, setIsRoomSelected] = useState(false);
   const [nombre, setNombre] = useState('');
   const [housekeeperId, setHousekeeperId] = useState(null);
-  const [taskPhotos, setTaskPhotos] = useState({}); // Estado para manejar las fotos individuales de cada tarea
-  const [maintenancePhoto, setMaintenancePhoto] = useState(''); // Foto para la tarea de mantenimiento
+  // const [taskPhotos, setTaskPhotos] = useState({});
+  const [maintenancePhoto, setMaintenancePhoto] = useState('');
   const [maintenanceCondition, setMaintenanceCondition] = useState('PENDIENTE');
   const [showMaintenanceTasks, setShowMaintenanceTasks] = useState(false); // Estado para mostrar/ocultar las tareas de mantenimiento
+  const [photo, setPhoto] = useState('');
+  // const [errorMessages, setErrorMessages] = useState({});
   const navigate = useNavigate();
 
   const backendUrl = process.env.REACT_APP_BACKEND_URL || process.env.BACKEND_URL;
@@ -65,7 +67,7 @@ const PrivateHouseKeeper = () => {
   const handleFetchMaintenanceTasks = async () => {
     const token = localStorage.getItem('token');
     let housekeeperId = null;
-  
+
     if (token) {
       try {
         const decoded = jwtDecode(token);
@@ -76,19 +78,19 @@ const PrivateHouseKeeper = () => {
         return;
       }
     }
-  
+
     if (!housekeeperId) return;  // Asegúrate de que el housekeeper_id esté presente
-  
+
     try {
       // Aquí pasas el housekeeper_id y room_id como parámetros
       const response = await fetch(`${backendUrl}api/maintenancetasks/filter?housekeeper_id=${housekeeperId}&room_id=${selectedRoomId}`);
-      
+
       if (!response.ok) {
         throw new Error('Error al obtener las tareas de mantenimiento');
       }
-  
+
       const data = await response.json();
-      
+
       // Filtramos por tareas pendientes si es necesario (opcional)
       const filteredMaintenanceTasks = data.filter(task => task.condition === 'PENDIENTE');
       setMaintenanceTasks(filteredMaintenanceTasks); // Guardamos las tareas filtradas en el estado
@@ -97,7 +99,7 @@ const PrivateHouseKeeper = () => {
       alert('Hubo un error al obtener las tareas de mantenimiento');
     }
   };
-  
+
 
   useEffect(() => {
     if (housekeeperId && selectedRoomId) {
@@ -143,7 +145,7 @@ const PrivateHouseKeeper = () => {
       photo_url: maintenancePhoto,  // Aquí pasamos la URL de la foto
     };
 
-      console.log('Datos de la tarea de mantenimiento:', taskData);
+    console.log('Datos de la tarea de mantenimiento:', taskData);
 
     try {
       const response = await fetch(`${backendUrl}api/maintenancetasks`, {
@@ -188,24 +190,6 @@ const PrivateHouseKeeper = () => {
     acc[task.id_room].push(task);
     return acc;
   }, {});
-
-  // Función para manejar la carga de fotos para las tareas de Housekeeper
-  const handlePhotoChange = (taskId, photoUrl) => {
-    setTaskPhotos(prevState => ({
-      ...prevState,
-      [taskId]: photoUrl, // Guardamos la URL de la foto para la tarea específica
-    }));
-  };
-
-  // Función para manejar la carga de fotos para la tarea de mantenimiento
-  const handleMaintenancePhotoChange = (taskId, photoUrl) => {
-    console.log('URL de la foto de mantenimiento:', photoUrl); // Verifica la URL de la foto
-    setMaintenancePhoto(photoUrl);
-    // setMaintenancePhoto(prevState => ({
-    //   ...prevState,
-    //   [taskId]: photoUrl,
-    // }));
-  };
 
   // Función para actualizar el estado de una tarea de housekeeper
   const handleStatusChange = async (taskId, newStatus) => {
@@ -293,26 +277,18 @@ const PrivateHouseKeeper = () => {
                   <p><strong>Fecha de Asignación:</strong> {task.assignment_date}</p>
                   <p><strong>Fecha de Entrega:</strong> {task.submission_date}</p>
 
-                  {/* Foto de la tarea */}
                   <strong>Foto: </strong>
                   <div className="form-group mb-3">
-                    <CloudinaryApiHotel
-                      taskId={task.id}  // Pasamos el ID de la tarea
-                      setPhotoUrl={handlePhotoChange}
-                      setErrorMessage={() => { }}
-                    />
-                    {taskPhotos[task.id] && (
-                      <img
-                        src={taskPhotos[task.id]}
-                        alt="Vista previa de la foto"
-                        style={{ width: "80px", height: "80px", objectFit: "cover", borderRadius: "8px", marginTop: "10px" }}
-                      />
+                    <CloudinaryApiHotel setPhotoUrl={setPhoto} setErrorMessage={() => { }} />
+                    {photo && (
+                      <img src={photo} alt="Preview" style={{ width: "80px", height: "80px", objectFit: "cover", borderRadius: "8px", marginTop: "10px" }} />
                     )}
                   </div>
+
                 </div>
               </div>
             ))}
-            
+
             {/* Tareas de mantenimiento */}
             <div className="mt-3">
               <button
@@ -340,7 +316,7 @@ const PrivateHouseKeeper = () => {
                       />
                     </div>
 
-                    <div className="form-group mb-3">
+                    {/* <div className="form-group mb-3">
                       <strong>Foto: </strong>
                       <CloudinaryApiHotel
                         taskId="maintenance"
@@ -354,7 +330,17 @@ const PrivateHouseKeeper = () => {
                           style={{ width: "80px", height: "80px", objectFit: "cover", borderRadius: "8px", marginTop: "10px" }}
                         />
                       )}
+                    </div> */}
+
+
+                    <strong>Foto: </strong>
+                    <div className="form-group mb-3">
+                    <CloudinaryApiHotel setPhotoUrl={setMaintenancePhoto} setErrorMessage={() => { }} />
+                      {maintenancePhoto  && (
+                        <img src={maintenancePhoto} alt="Preview" style={{ width: "80px", height: "80px", objectFit: "cover", borderRadius: "8px", marginTop: "10px" }} />
+                      )}
                     </div>
+
 
                     <button
                       type="button"
