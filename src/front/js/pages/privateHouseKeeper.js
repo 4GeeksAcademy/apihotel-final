@@ -12,7 +12,9 @@ const PrivateHouseKeeper = () => {
   const [maintenancePhoto, setMaintenancePhoto] = useState('');
   const [maintenanceCondition, setMaintenanceCondition] = useState('PENDIENTE');
   const [showMaintenanceTasks, setShowMaintenanceTasks] = useState(false);
-  const [photo, setPhoto] = useState('');
+  // const [photo, setPhoto] = useState('');
+  const [taskPhotos, setTaskPhotos] = useState({});
+
   const navigate = useNavigate();
   const backendUrl = process.env.REACT_APP_BACKEND_URL || process.env.BACKEND_URL;
   const getHousekeeperIdFromToken = () => {
@@ -114,7 +116,7 @@ const PrivateHouseKeeper = () => {
       }
     }
     const taskData = {
-      tarea: tarea || undefined,
+      nombre: nombre || undefined,
       room_id: selectedRoomId,
       housekeeper_id: housekeeperId,
       condition: maintenanceCondition, // Usamos el estado de condition aquí
@@ -194,6 +196,14 @@ const PrivateHouseKeeper = () => {
   const toggleMaintenanceTasks = () => {
     setShowMaintenanceTasks(prevState => !prevState); // Alterna entre mostrar/ocultar las tareas de mantenimiento
   };
+
+  const handlePhotoChange = (taskId, photoUrl) => {
+    setTaskPhotos((prev) => ({
+      ...prev,
+      [taskId]: photoUrl,
+    }));
+  };
+
   return (
     <div className="d-flex justify-content-center align-items-center min-vh-100 bg-light">
       <div className="card shadow-lg p-4" style={{ maxWidth: '800px', width: '100%' }}>
@@ -237,13 +247,22 @@ const PrivateHouseKeeper = () => {
                   </div>
                   <p><strong>Fecha de Asignación:</strong> {task.assignment_date}</p>
                   <p><strong>Fecha de Entrega:</strong> {task.submission_date}</p>
+
                   <strong>Foto: </strong>
                   <div className="form-group mb-3">
-                    <CloudinaryApiHotel setPhotoUrl={setPhoto} setErrorMessage={() => { }} />
-                    {photo && (
-                      <img src={photo} alt="Preview" style={{ width: "80px", height: "80px", objectFit: "cover", borderRadius: "8px", marginTop: "10px" }} />
+                    <CloudinaryApiHotel
+                      setPhotoUrl={(url) => handlePhotoChange(task.id, url)}  // Usamos la función para actualizar la foto de la tarea específica
+                      setErrorMessage={() => { }}
+                    />
+                    {taskPhotos[task.id] && (
+                      <img
+                        src={taskPhotos[task.id]}
+                        alt="Preview"
+                        style={{ width: "80px", height: "80px", objectFit: "cover", borderRadius: "8px", marginTop: "10px" }}
+                      />
                     )}
                   </div>
+
                 </div>
               </div>
             ))}
@@ -273,8 +292,8 @@ const PrivateHouseKeeper = () => {
                     </div>
                     <strong>Foto: </strong>
                     <div className="form-group mb-3">
-                    <CloudinaryApiHotel setPhotoUrl={setMaintenancePhoto} setErrorMessage={() => { }} />
-                      {maintenancePhoto  && (
+                      <CloudinaryApiHotel setPhotoUrl={setMaintenancePhoto} setErrorMessage={() => { }} />
+                      {maintenancePhoto && (
                         <img src={maintenancePhoto} alt="Preview" style={{ width: "80px", height: "80px", objectFit: "cover", borderRadius: "8px", marginTop: "10px" }} />
                       )}
                     </div>
