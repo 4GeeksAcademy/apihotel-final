@@ -1,21 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
-import CloudinaryApiHotel from '../component/cloudinaryApiHotel'; // Asegúrate de tener el componente correcto importado
+import CloudinaryApiHotel from '../component/cloudinaryApiHotel';
 
 const PrivateHouseKeeper = () => {
   const [tasks, setTasks] = useState([]);
-  const [maintenanceTasks, setMaintenanceTasks] = useState([]); // Tareas de mantenimiento
+  const [maintenanceTasks, setMaintenanceTasks] = useState([]);
   const [selectedRoomId, setSelectedRoomId] = useState(null);
   const [isRoomSelected, setIsRoomSelected] = useState(false);
   const [nombre, setNombre] = useState('');
   const [housekeeperId, setHousekeeperId] = useState(null);
-  // const [taskPhotos, setTaskPhotos] = useState({});
   const [maintenancePhoto, setMaintenancePhoto] = useState('');
   const [maintenanceCondition, setMaintenanceCondition] = useState('PENDIENTE');
-  const [showMaintenanceTasks, setShowMaintenanceTasks] = useState(false); // Estado para mostrar/ocultar las tareas de mantenimiento
+  const [showMaintenanceTasks, setShowMaintenanceTasks] = useState(false);
   const [photo, setPhoto] = useState('');
-  // const [errorMessages, setErrorMessages] = useState({});
   const navigate = useNavigate();
 
   const backendUrl = process.env.REACT_APP_BACKEND_URL || process.env.BACKEND_URL;
@@ -207,7 +205,7 @@ const PrivateHouseKeeper = () => {
 
       if (response.ok) {
         const updatedData = await response.json();
-        // Si el estado es "FINALIZADA", filtramos la tarea
+
         if (newStatus === 'FINALIZADA') {
           setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
         } else {
@@ -265,8 +263,8 @@ const PrivateHouseKeeper = () => {
                       <input
                         type="checkbox"
                         className="form-check-input"
-                        checked={task.condition === 'FINALIZADA'} // Marcar el checkbox si la tarea está FINALIZADA
-                        onChange={() => handleStatusChange(task.id, task.condition === 'FINALIZADA' ? 'PENDIENTE' : 'FINALIZADA')} // Alternar entre 'FINALIZADA' y 'Pendiente'
+                        checked={task.condition === 'FINALIZADA'}
+                        onChange={() => handleStatusChange(task.id, task.condition === 'FINALIZADA' ? 'PENDIENTE' : 'FINALIZADA')}
                       />
                       <label className="form-check-label" htmlFor={`task-${task.id}`}>
                         {task.condition === 'FINALIZADA' ? 'Marcar como PENDIENTE' : 'Marcar como FINALIZADA'}
@@ -293,7 +291,6 @@ const PrivateHouseKeeper = () => {
             <div className="mt-3">
               <button
                 className="btn btn-primary"
-                // style={{ width: "80px", height: "80px", objectFit: "cover", borderRadius: "8px", marginTop: "10px" }}
                 onClick={toggleMaintenanceTasks}
               >
                 {showMaintenanceTasks ? 'Ocultar tareas de mantenimiento' : 'Mostrar tareas de mantenimiento'}
@@ -316,22 +313,6 @@ const PrivateHouseKeeper = () => {
                       />
                     </div>
 
-                    {/* <div className="form-group mb-3">
-                      <strong>Foto: </strong>
-                      <CloudinaryApiHotel
-                        taskId="maintenance"
-                        setPhotoUrl={handleMaintenancePhotoChange}
-                        setErrorMessage={() => { }}
-                      />
-                      {maintenancePhoto && (
-                        <img
-                          src={maintenancePhoto}
-                          alt="Vista previa de la foto"
-                          style={{ width: "80px", height: "80px", objectFit: "cover", borderRadius: "8px", marginTop: "10px" }}
-                        />
-                      )}
-                    </div> */}
-
 
                     <strong>Foto: </strong>
                     <div className="form-group mb-3">
@@ -340,7 +321,6 @@ const PrivateHouseKeeper = () => {
                         <img src={maintenancePhoto} alt="Preview" style={{ width: "80px", height: "80px", objectFit: "cover", borderRadius: "8px", marginTop: "10px" }} />
                       )}
                     </div>
-
 
                     <button
                       type="button"
