@@ -92,7 +92,7 @@ const MaintenanceTask = () => {
             <h5 className="card-title">{editingId ? 'Editar' : 'Crear'} Tarea de Mantenimiento</h5>
             <form>
               <div className="form-group">
-                <label>Tarea</label>
+                <label><strong>Tarea</strong></label>
                 <input
                   type="text"
                   className="form-control"
@@ -102,7 +102,21 @@ const MaintenanceTask = () => {
               </div>
 
               <div className="form-group">
-                <label>Foto (subir imagen)</label>
+                <label><strong>Habitación</strong></label>
+                <select
+                  className="form-control"
+                  value={idRoom}
+                  onChange={e => setIdRoom(e.target.value)}
+                >
+                  <option value="">Selecciona una habitación</option>
+                  {Array.isArray(store.rooms) && store.rooms.map(room => (
+                    <option key={room.id} value={room.id}>{room.nombre}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label><strong>Foto (subir imagen)</strong></label>
                 <CloudinaryApiHotel
                   onUploadSuccess={(result) => setPhotoUrl(result.url)}
                   setErrorMessage={setErrorMessage}
@@ -111,13 +125,13 @@ const MaintenanceTask = () => {
 
               {photo && (
                 <div className="mt-2">
-                  <label>Vista previa:</label>
+                  <label><strong>Vista previa:</strong></label>
                   <img src={photo} alt="preview" style={{ width: "100%", maxWidth: "300px", borderRadius: "10px" }} />
                 </div>
               )}
 
 
-              <div className="form-group">
+              {/* <div className="form-group">
                 <label>Estado en que se encuentra</label>
                 <input
                   type="text"
@@ -125,10 +139,10 @@ const MaintenanceTask = () => {
                   value={condition}
                   onChange={e => setCondition(e.target.value)}
                 />
-              </div>
+              </div> */}
 
               <div className="form-group">
-                <label>Sucursal</label>
+                <label><strong>Sucursal</strong></label>
                 <select
                   className="form-control"
                   value={selectedBranch}
@@ -144,22 +158,10 @@ const MaintenanceTask = () => {
                 </select>
               </div>
 
-              <div className="form-group">
-                <label>Habitación</label>
-                <select
-                  className="form-control"
-                  value={idRoom}
-                  onChange={e => setIdRoom(e.target.value)}
-                >
-                  <option value="">Selecciona una habitación</option>
-                  {Array.isArray(store.rooms) && store.rooms.map(room => (
-                    <option key={room.id} value={room.id}>{room.nombre}</option>
-                  ))}
-                </select>
-              </div>
+              
 
               <div className="form-group">
-                <label>Técnico de Mantenimiento</label>
+                <label><strong>Técnico de Mantenimiento</strong></label>
                 <select
                   className="form-control"
                   value={idMaintenance}

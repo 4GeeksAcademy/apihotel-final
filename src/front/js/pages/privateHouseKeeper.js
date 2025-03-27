@@ -12,7 +12,6 @@ const PrivateHouseKeeper = () => {
   const [maintenancePhoto, setMaintenancePhoto] = useState('');
   const [maintenanceCondition, setMaintenanceCondition] = useState('PENDIENTE');
   const [showMaintenanceTasks, setShowMaintenanceTasks] = useState(false);
-  // const [photo, setPhoto] = useState('');
   const [taskPhotos, setTaskPhotos] = useState({});
 
   const navigate = useNavigate();
@@ -251,7 +250,7 @@ const PrivateHouseKeeper = () => {
                   <strong>Foto: </strong>
                   <div className="form-group mb-3">
                     <CloudinaryApiHotel
-                      setPhotoUrl={(url) => handlePhotoChange(task.id, url)}  // Usamos la función para actualizar la foto de la tarea específica
+                      setPhotoUrl={(url) => handlePhotoChange(task.id, url)}
                       setErrorMessage={() => { }}
                     />
                     {taskPhotos[task.id] && (

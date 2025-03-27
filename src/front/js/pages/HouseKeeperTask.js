@@ -99,14 +99,14 @@ const HouseKeeperTask = () => {
     <div className="d-flex">
       <Sidebar />
       <div className="container">
-        <h1>Gestión de Tareas de HouseKeeper</h1>
+        <h1>Gestión de Tareas de Camarera</h1>
 
         <div className="card mb-4">
           <div className="card-body">
             <h5 className="card-title">{editingId ? 'Editar' : 'Crear'} Tarea</h5>
 
             <div className="form-group">
-              <label>HouseKeeper</label>
+              <label><strong>Camarera</strong></label>
               <select
                 className="form-control"
                 value={idHousekeeper}
@@ -124,10 +124,20 @@ const HouseKeeperTask = () => {
             </div>
 
             <div className="form-group">
-              <label>Tarea</label>
-              <input className="form-control" value={nombre} onChange={(e) => setNombre(e.target.value)} />
+              <label><strong>Habitación</strong></label>
+              <select className="form-control" value={idRoom} onChange={(e) => setIdRoom(e.target.value)}>
+                <option value="">Selecciona una habitación</option>
+                {filteredRooms.map((room) => (
+                  <option key={room.id} value={room.id}>{room.nombre}</option>
+                ))}
+              </select>
             </div>
 
+            <div className="form-group">
+              <label><strong>Tarea</strong></label>
+              <input className="form-control" value={nombre} onChange={(e) => setNombre(e.target.value)} />
+            </div>
+            <label><strong>Foto (subir imagen)</strong></label>
             <CloudinaryApiHotel
               setPhotoUrl={setPhoto}
               setErrorMessage={(msg) => console.error("Error de Cloudinary:", msg)}
@@ -141,7 +151,7 @@ const HouseKeeperTask = () => {
               <input type="date" className="form-control" value={assignmentDate} onChange={(e) => setAssignmentDate(e.target.value)} />
             </div> */}
 
-            <div className="form-group">
+            {/* <div className="form-group">
               <label>Estado en que se encuentra</label>
               <input
                 type="text"
@@ -149,21 +159,13 @@ const HouseKeeperTask = () => {
                 value={condition}
                 onChange={e => setCondition(e.target.value)}
               />
-            </div>
+            </div> */}
             <div className="form-group">
-              <label>Fecha de Entrega</label>
+              <label><strong>Fecha de Entrega</strong></label>
               <input type="date" className="form-control" value={submissionDate} onChange={(e) => setSubmissionDate(e.target.value)} />
             </div>
 
-            <div className="form-group">
-              <label>Habitación</label>
-              <select className="form-control" value={idRoom} onChange={(e) => setIdRoom(e.target.value)}>
-                <option value="">Selecciona una habitación</option>
-                {filteredRooms.map((room) => (
-                  <option key={room.id} value={room.id}>{room.nombre}</option>
-                ))}
-              </select>
-            </div>
+
 
             <div className="form-group">
               <button
@@ -186,10 +188,11 @@ const HouseKeeperTask = () => {
               <tr>
                 <th>Tarea</th>
                 <th>Estado</th>
-                <th>Asignación</th>
+                {/* <th>Asignación</th> */}
                 <th>Entrega</th>
                 <th>Habitación</th>
-                <th>Housekeeper</th>
+                <th>Foto</th>
+                <th>Camarera</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -198,7 +201,7 @@ const HouseKeeperTask = () => {
                 <tr key={task.id}>
                   <td>{task.nombre}</td>
                   <td>{task.condition}</td>
-                  <td>{task.assignment_date}</td>
+                  {/* <td>{task.assignment_date}</td> */}
                   <td>{task.submission_date}</td>
                   <td>{task.room_nombre || task.id_room}</td>
                   <td>
