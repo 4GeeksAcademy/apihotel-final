@@ -118,28 +118,16 @@ const MaintenanceTask = () => {
               <div className="form-group">
                 <label><strong>Foto (subir imagen)</strong></label>
                 <CloudinaryApiHotel
-                  onUploadSuccess={(result) => setPhotoUrl(result.url)}
-                  setErrorMessage={setErrorMessage}
+                  setPhotoUrl={setPhoto}
+                  setErrorMessage={(msg) => console.error("Error de Cloudinary:", msg)}
                 />
               </div>
 
               {photo && (
                 <div className="mt-2">
-                  <label><strong>Vista previa:</strong></label>
-                  <img src={photo} alt="preview" style={{ width: "100%", maxWidth: "300px", borderRadius: "10px" }} />
+                  <img src={photo} alt="Preview" style={{ width: "80px", height: "80px", objectFit: "cover", borderRadius: "8px", marginTop: "10px" }} />
                 </div>
               )}
-
-
-              {/* <div className="form-group">
-                <label>Estado en que se encuentra</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={condition}
-                  onChange={e => setCondition(e.target.value)}
-                />
-              </div> */}
 
               <div className="form-group">
                 <label><strong>Sucursal</strong></label>

@@ -146,20 +146,6 @@ const HouseKeeperTask = () => {
               <img src={photo} alt="Preview" style={{ width: "80px", height: "80px", objectFit: "cover", borderRadius: "8px", marginTop: "10px" }} />
             )}
 
-            {/* <div className="form-group">
-              <label>Fecha de Asignación</label>
-              <input type="date" className="form-control" value={assignmentDate} onChange={(e) => setAssignmentDate(e.target.value)} />
-            </div> */}
-
-            {/* <div className="form-group">
-              <label>Estado en que se encuentra</label>
-              <input
-                type="text"
-                className="form-control"
-                value={condition}
-                onChange={e => setCondition(e.target.value)}
-              />
-            </div> */}
             <div className="form-group">
               <label><strong>Fecha de Entrega</strong></label>
               <input type="date" className="form-control" value={submissionDate} onChange={(e) => setSubmissionDate(e.target.value)} />
