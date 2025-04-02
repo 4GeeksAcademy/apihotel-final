@@ -1,26 +1,23 @@
-import React, { useState } from "react";
+import React from "react";
 
-const CloudinaryApiHotel = ({ setPhotoUrl, setErrorMessage}) => {
-  const [errorMessage, setLocalErrorMessage] = useState("");
-
+const CloudinaryApiHotel = ({ setPhotoUrl, setErrorMessage }) => {
   const handleFileChange = (event) => {
     const file = event.target.files[0];
-    console.log("Archivo seleccionado:", file);
-  
+
     if (file) {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("upload_preset", "Apihotel");
-  
+
       fetch("https://api.cloudinary.com/v1_1/dnftnyi5g/image/upload", {
         method: "POST",
         body: formData,
       })
         .then((response) => response.json())
         .then((data) => {
-          console.log("Respuesta Cloudinary:", data);
           if (data.secure_url) {
-            setPhotoUrl(data.secure_url);  
+            setPhotoUrl(data.secure_url);
+            setErrorMessage("");
           } else {
             setErrorMessage("No se recibió la URL de la imagen");
           }
@@ -33,10 +30,12 @@ const CloudinaryApiHotel = ({ setPhotoUrl, setErrorMessage}) => {
   };
 
   return (
-    <div>
-      <input type="file" onChange={handleFileChange} accept="image/*" />
-      {errorMessage && <p className="text-danger">{errorMessage}</p>}
-    </div>
+    <input
+      type="file"
+      onChange={handleFileChange}
+      accept="image/*"
+      className="form-control form-control-sm"
+    />
   );
 };
 

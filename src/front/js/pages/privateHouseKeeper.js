@@ -20,7 +20,7 @@ const PrivateHouseKeeper = () => {
     return savedPhotos ? JSON.parse(savedPhotos) : {};
   });
   const [errorMessages, setErrorMessages] = useState({});
-  
+
   const navigate = useNavigate();
   const backendUrl = process.env.REACT_APP_BACKEND_URL || process.env.BACKEND_URL;
 
@@ -61,7 +61,7 @@ const PrivateHouseKeeper = () => {
       if (!response.ok) throw new Error('Error en la respuesta del servidor');
       const data = await response.json();
       const filteredTasks = data.filter(task => task.id_housekeeper === housekeeperId);
-      
+
       const updatedPhotos = { ...taskPhotos };
       filteredTasks.forEach(task => {
         if (task.photo_url) {
@@ -69,7 +69,7 @@ const PrivateHouseKeeper = () => {
         }
       });
       setTaskPhotos(updatedPhotos);
-      
+
       setTasks(filteredTasks);
     } catch (error) {
       console.error('Error al obtener las tareas:', error);
@@ -156,7 +156,7 @@ const PrivateHouseKeeper = () => {
 
   const handleFilterTasks = (view) => {
     let filteredTasks = tasks;
-    
+
     if (view === 'pending') {
       filteredTasks = tasks.filter(task => task.condition === 'PENDIENTE');
     } else if (view === 'completed') {
@@ -310,8 +310,6 @@ const PrivateHouseKeeper = () => {
                 const hayPendientes = tareas.some(task => task.condition === 'PENDIENTE');
 
                 let iconEstado = '';
-                const iconRoom = <i className="fas fa-bed me-2"></i>;
-
                 if (todasFinalizadas) {
                   iconEstado = '✅';
                 } else if (hayPendientes) {
@@ -320,178 +318,190 @@ const PrivateHouseKeeper = () => {
                   iconEstado = '❔';
                 }
 
+                // Detectar si es zona común
+                const isZonaComun = !tareas[0].room_nombre;
+
+                const iconRoom = isZonaComun
+                  ? <i className="fas fa-tree me-2"></i> 
+                  : <i className="fas fa-bed me-2"></i>;
+
+                const roomLabel = isZonaComun
+                  ? 'Zona común'
+                  : `Habitación: ${tareas[0].room_nombre}`;
+
                 return (
                   <div key={roomId} className="col-md-6">
                     <button
                       className="btn custom-room-button text-start mb-3 w-100 py-2 fw-semibold"
                       onClick={() => handleRoomClick(roomId)}
                     >
-                      {iconRoom} {iconEstado} Habitación: {tareas[0].room_nombre}
+                      {iconRoom} {iconEstado} {roomLabel}
                     </button>
                   </div>
                 );
               })}
-            </div>
 
-            {/* Botones de filtrado - Solo fuera de las habitaciones */}
-            <div className="d-flex justify-content-center gap-3 mb-4">
-              <button 
-                className="btn btn-primary"
-                onClick={() => handleFilterTasks('all')}
-              >
-                TODAS
-              </button>
-              <button 
-                className="btn btn-warning"
-                onClick={() => handleFilterTasks('pending')}
-              >
-                PENDIENTES
-              </button>
-              <button 
-                className="btn btn-success"
-                onClick={() => handleFilterTasks('completed')}
-              >
-                FINALIZADAS
-              </button>
-            </div>
-          </>
+
+              {/* Botones de filtrado - Solo fuera de las habitaciones */}
+              <div className="d-flex justify-content-center gap-3 mb-4">
+                <button
+                  className="btn btn-primary"
+                  onClick={() => handleFilterTasks('all')}
+                >
+                  TODAS
+                </button>
+                <button
+                  className="btn btn-warning"
+                  onClick={() => handleFilterTasks('pending')}
+                >
+                  PENDIENTES
+                </button>
+                <button
+                  className="btn btn-success"
+                  onClick={() => handleFilterTasks('completed')}
+                >
+                  FINALIZADAS
+                </button>
+              </div>
+              </div>
+            </>
         )}
 
-        {isRoomSelected && (
-          <div className="mt-4">
-            {groupedTasks[selectedRoomId]?.map(task => (
-              <div key={task.id} className="card mb-3 shadow-sm rounded-3">
-                <div className="card-body">
-                  <p><strong>Tarea asignada:</strong> {task.nombre}</p>
-                  <p><strong>Estado actual:</strong>
-                    <span className={`badge ${task.condition === 'PENDIENTE' ? 'bg-warning' :
-                      task.condition === 'EN PROCESO' ? 'bg-info' : 'bg-success'
-                      } ms-2`}>
-                      {task.condition}
-                    </span>
-                  </p>
+            {isRoomSelected && (
+              <div className="mt-4">
+                {groupedTasks[selectedRoomId]?.map(task => (
+                  <div key={task.id} className="card mb-3 shadow-sm rounded-3">
+                    <div className="card-body">
+                      <p><strong>Tarea asignada:</strong> {task.nombre}</p>
+                      <p><strong>Estado actual:</strong>
+                        <span className={`badge ${task.condition === 'PENDIENTE' ? 'bg-warning' :
+                          task.condition === 'EN PROCESO' ? 'bg-info' : 'bg-success'
+                          } ms-2`}>
+                          {task.condition}
+                        </span>
+                      </p>
 
-                  <div className="mb-3">
-                    <label htmlFor="photo" className="form-label">Foto</label>
-                    <CloudinaryApiHotel
-                      setPhotoUrl={(url) => handlePhotoUpload(task.id, url)}
-                      setErrorMessage={(msg) => handlePhotoError(task.id, msg)}
-                    />
-                    {(taskPhotos[task.id] || task.photo_url) && (
-                      <div className="mt-2">
-                        <img
-                          src={taskPhotos[task.id] || task.photo_url}
-                          alt={`Tarea ${task.nombre}`}
-                          className="img-thumbnail"
-                          style={{ maxWidth: '200px' }}
+                      <div className="mb-3">
+                        <label htmlFor="photo" className="form-label">Foto</label>
+                        <CloudinaryApiHotel
+                          setPhotoUrl={(url) => handlePhotoUpload(task.id, url)}
+                          setErrorMessage={(msg) => handlePhotoError(task.id, msg)}
                         />
+                        {(taskPhotos[task.id] || task.photo_url) && (
+                          <div className="mt-2">
+                            <img
+                              src={taskPhotos[task.id] || task.photo_url}
+                              alt={`Tarea ${task.nombre}`}
+                              className="img-thumbnail"
+                              style={{ maxWidth: '200px' }}
+                            />
+                          </div>
+                        )}
+                        {errorMessages[task.id] && (
+                          <div className="text-danger small mt-1">{errorMessages[task.id]}</div>
+                        )}
                       </div>
-                    )}
-                    {errorMessages[task.id] && (
-                      <div className="text-danger small mt-1">{errorMessages[task.id]}</div>
-                    )}
-                  </div>
 
-                  <div className="mt-3 p-3 border rounded d-flex justify-content-around">
-                    {['PENDIENTE', 'EN PROCESO', 'FINALIZADA'].map((status) => (
-                      <button
-                        key={status}
-                        className={`btn ${status === 'PENDIENTE' ? 'btn-warning' :
-                          status === 'EN PROCESO' ? 'btn-info' : 'btn-success'
-                          }`}
-                        onClick={() => handleStatusChange(task.id, status)}
-                        disabled={task.condition === status}
-                      >
-                        {status}
-                      </button>
-                    ))}
-                  </div>
+                      <div className="mt-3 p-3 border rounded d-flex justify-content-around">
+                        {['PENDIENTE', 'EN PROCESO', 'FINALIZADA'].map((status) => (
+                          <button
+                            key={status}
+                            className={`btn ${status === 'PENDIENTE' ? 'btn-warning' :
+                              status === 'EN PROCESO' ? 'btn-info' : 'btn-success'
+                              }`}
+                            onClick={() => handleStatusChange(task.id, status)}
+                            disabled={task.condition === status}
+                          >
+                            {status}
+                          </button>
+                        ))}
+                      </div>
 
-                  {task.condition === 'FINALIZADA' && (
-                    <div className="text-center mt-2">
-                      <i className="bi bi-check-circle-fill text-success fs-4"></i>
-                      <span className="ms-2">Tarea completada</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-
-            <div className="mt-3">
-              <button className="btn custom-room-button" onClick={toggleMaintenanceTasks}>
-                {showMaintenanceTasks ? 'Ocultar tareas de mantenimiento' : 'Mostrar tareas de mantenimiento'}
-              </button>
-            </div>
-
-            {showMaintenanceTasks && (
-              <div className="card shadow-lg mt-4">
-                <div className="card-body">
-                  <h5 className="card-title">Tarea de Mantenimiento</h5>
-                  <form>
-                    <div className="form-group mb-3">
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Ingresa la tarea de mantenimiento..."
-                        value={nombre}
-                        onChange={(e) => setNombre(e.target.value)}
-                      />
-                    </div>
-                    <strong>Foto: </strong>
-                    <div className="form-group mb-3">
-                      <CloudinaryApiHotel setPhotoUrl={setMaintenancePhoto} setErrorMessage={() => { }} />
-                      {maintenancePhoto && <img src={maintenancePhoto} alt="Preview" style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 8, marginTop: 10 }} />}
-                    </div>
-                    <button
-                      type="button"
-                      className="btn btn-block"
-                      style={{ backgroundColor: "#0dcaf0" }}
-                      onClick={createMaintenanceTask}
-                    >
-                      Crear Tarea
-                    </button>
-
-                    <div className="mt-4">
-                      <h4 className="mb-3">Listado de Tareas de Mantenimiento</h4>
-                      {maintenanceTasks.length > 0 ? (
-                        <div className="list-group">
-                          {maintenanceTasks.map(task => (
-                            <div key={task.id} className="list-group-item d-flex justify-content-between align-items-center">
-                              <span>{task.nombre}</span>
-                              <span className={`badge ${task.condition === 'PENDIENTE' ? 'bg-primary' : 'bg-secondary'} ms-2`}>
-                                {task.condition}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="alert alert-info" role="alert">
-                          No hay tareas de mantenimiento disponibles.
+                      {task.condition === 'FINALIZADA' && (
+                        <div className="text-center mt-2">
+                          <i className="bi bi-check-circle-fill text-success fs-4"></i>
+                          <span className="ms-2">Tarea completada</span>
                         </div>
                       )}
                     </div>
-                  </form>
+                  </div>
+                ))}
+
+                <div className="mt-3">
+                  <button className="btn custom-room-button" onClick={toggleMaintenanceTasks}>
+                    {showMaintenanceTasks ? 'Ocultar tareas de mantenimiento' : 'Mostrar tareas de mantenimiento'}
+                  </button>
                 </div>
+
+                {showMaintenanceTasks && (
+                  <div className="card shadow-lg mt-4">
+                    <div className="card-body">
+                      <h5 className="card-title">Tarea de Mantenimiento</h5>
+                      <form>
+                        <div className="form-group mb-3">
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Ingresa la tarea de mantenimiento..."
+                            value={nombre}
+                            onChange={(e) => setNombre(e.target.value)}
+                          />
+                        </div>
+                        <strong>Foto: </strong>
+                        <div className="form-group mb-3">
+                          <CloudinaryApiHotel setPhotoUrl={setMaintenancePhoto} setErrorMessage={() => { }} />
+                          {maintenancePhoto && <img src={maintenancePhoto} alt="Preview" style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 8, marginTop: 10 }} />}
+                        </div>
+                        <button
+                          type="button"
+                          className="btn btn-block"
+                          style={{ backgroundColor: "#0dcaf0" }}
+                          onClick={createMaintenanceTask}
+                        >
+                          Crear Tarea
+                        </button>
+
+                        <div className="mt-4">
+                          <h4 className="mb-3">Listado de Tareas de Mantenimiento</h4>
+                          {maintenanceTasks.length > 0 ? (
+                            <div className="list-group">
+                              {maintenanceTasks.map(task => (
+                                <div key={task.id} className="list-group-item d-flex justify-content-between align-items-center">
+                                  <span>{task.nombre}</span>
+                                  <span className={`badge ${task.condition === 'PENDIENTE' ? 'bg-primary' : 'bg-secondary'} ms-2`}>
+                                    {task.condition}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="alert alert-info" role="alert">
+                              No hay tareas de mantenimiento disponibles.
+                            </div>
+                          )}
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  className="btn custom-room-button w-100 mt-3 fw-semibold py-2"
+                  onClick={handleBackToRooms}
+                >
+                  🔙 Volver a todas las habitaciones
+                </button>
               </div>
             )}
 
-            <button
-              className="btn custom-room-button w-100 mt-3 fw-semibold py-2"
-              onClick={handleBackToRooms}
-            >
-              🔙 Volver a todas las habitaciones
-            </button>
+            <div className="d-flex justify-content-center mt-4">
+              <button className="btn px-5 py-2" style={{ backgroundColor: "#0dcaf0" }} onClick={handleLogout}>
+                <i className="fas fa-sign-out-alt me-2"></i> Cerrar sesión
+              </button>
+            </div>
           </div>
-        )}
-
-        <div className="d-flex justify-content-center mt-4">
-          <button className="btn px-5 py-2" style={{ backgroundColor: "#0dcaf0" }} onClick={handleLogout}>
-            <i className="fas fa-sign-out-alt me-2"></i> Cerrar sesión
-          </button>
-        </div>
       </div>
-    </div>
-  );
+      );
 };
 
-export default PrivateHouseKeeper;
+      export default PrivateHouseKeeper;

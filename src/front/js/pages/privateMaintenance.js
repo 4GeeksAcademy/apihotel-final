@@ -11,7 +11,6 @@ const PrivateMaintenance = () => {
   const [isRoomSelected, setIsRoomSelected] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState(null);
   const [taskPhotos, setTaskPhotos] = useState(() => {
-    // Cargar fotos persistentes desde localStorage
     const savedPhotos = localStorage.getItem('maintenanceTaskPhotos');
     return savedPhotos ? JSON.parse(savedPhotos) : {};
   });
@@ -19,12 +18,10 @@ const PrivateMaintenance = () => {
   const navigate = useNavigate();
   const backendUrl = process.env.REACT_APP_BACKEND_URL || process.env.BACKEND_URL;
 
-  // Guardar fotos persistentes en localStorage
   useEffect(() => {
     const photosToSave = {};
     Object.keys(taskPhotos).forEach(taskId => {
       const task = tasks.find(t => t.id === parseInt(taskId));
-      // Solo guardar fotos de tareas finalizadas
       if (task && task.condition === 'FINALIZADA') {
         photosToSave[taskId] = taskPhotos[taskId];
       }
@@ -40,28 +37,22 @@ const PrivateMaintenance = () => {
         navigate('/loginMaintenance');
         return;
       }
-      const decodedToken = jwtDecode(token);
-      const maintenanceId = decodedToken.maintenance_id;
-      const response = await fetch(`${backendUrl}api/maintenancetasks`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+
+      const response = await fetch(`${backendUrl}api/maintenancetasks_by_branch`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
+
       if (!response.ok) {
         alert('Error al obtener las tareas de mantenimiento');
         return;
       }
+
       const data = await response.json();
-      const filteredTasks = data.filter(task =>
-        task.maintenance_id === maintenanceId || task.maintenance_id === null
-      );
+      setTasks(data);
+      setGroupedTasks(groupTasksByRoom(data));
 
-      setTasks(filteredTasks);
-      setGroupedTasks(groupTasksByRoom(filteredTasks));
-
-      // Combinar fotos del backend con las locales persistentes
       const updatedPhotos = { ...taskPhotos };
-      filteredTasks.forEach(task => {
+      data.forEach(task => {
         if (task.photo_url) {
           updatedPhotos[task.id] = task.photo_url;
         }
@@ -72,15 +63,17 @@ const PrivateMaintenance = () => {
       alert('Hubo un problema al obtener las tareas de mantenimiento');
     }
   };
+
   const groupTasksByRoom = (tasks) => {
     return tasks.reduce((acc, task) => {
-      if (!acc[task.room_id]) {
-        acc[task.room_id] = [];
-      }
-      acc[task.room_id].push(task);
+      const key = task.room_id || "zona_comun";
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(task);
       return acc;
     }, {});
   };
+  
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -89,15 +82,17 @@ const PrivateMaintenance = () => {
     }
     fetchMaintenanceTasks();
   }, []);
+
   const handleLogout = () => {
-    // Limpiar solo el token, mantener las fotos persistentes
     localStorage.removeItem('token');
     navigate('/loginMaintenance');
   };
+
   const handleRoomClick = (roomId) => {
     setSelectedRoomId(roomId);
     setIsRoomSelected(true);
   };
+
   const handleBackToRooms = () => {
     setIsRoomSelected(false);
     setSelectedRoomId(null);
@@ -106,25 +101,18 @@ const PrivateMaintenance = () => {
   const handleConditionChange = async (taskId, selectedRoomId, newCondition) => {
     try {
       const token = localStorage.getItem('token');
-      if (!token) {
-        navigate('/loginMaintenance');
-        return;
-      }
+      if (!token) return navigate('/loginMaintenance');
 
       const currentPhoto = taskPhotos[taskId] || tasks.find(t => t.id === taskId)?.photo_url || null;
-      const updatedTask = {
-        condition: newCondition,
-        photo_url: currentPhoto
-      };
+
+      const updatedTask = { condition: newCondition, photo_url: currentPhoto };
 
       setTasks(prevTasks =>
-        prevTasks.map(task =>
-          task.id === taskId ? { ...task, ...updatedTask } : task
-        )
+        prevTasks.map(task => task.id === taskId ? { ...task, ...updatedTask } : task)
       );
 
-      setGroupedTasks(prevGroupedTasks => {
-        const updated = { ...prevGroupedTasks };
+      setGroupedTasks(prev => {
+        const updated = { ...prev };
         Object.keys(updated).forEach(roomId => {
           updated[roomId] = updated[roomId].map(task =>
             task.id === taskId ? { ...task, ...updatedTask } : task
@@ -136,7 +124,7 @@ const PrivateMaintenance = () => {
       const response = await fetch(`${backendUrl}api/maintenancetasks/${taskId}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(updatedTask),
@@ -145,12 +133,8 @@ const PrivateMaintenance = () => {
       if (!response.ok) throw new Error('Error al actualizar');
 
       const updatedTaskFromBackend = await response.json();
-
       if (updatedTaskFromBackend.photo_url) {
-        setTaskPhotos(prev => ({
-          ...prev,
-          [taskId]: updatedTaskFromBackend.photo_url
-        }));
+        setTaskPhotos(prev => ({ ...prev, [taskId]: updatedTaskFromBackend.photo_url }));
       }
 
       if (newCondition === 'FINALIZADA') {
@@ -185,7 +169,7 @@ const PrivateMaintenance = () => {
       const response = await fetch(`${backendUrl}api/maintenancetasks/${taskId}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -226,25 +210,19 @@ const PrivateMaintenance = () => {
       <div className="card shadow-lg p-4" style={{ maxWidth: '800px', width: '100%' }}>
         <h2 className="text-center mb-4" style={{ color: "#0dcaf0" }}>Tareas de Mantenimiento</h2>
         <Chatbot />
-        {!isRoomSelected && Object.keys(groupedTasks).length > 0 ? (
+
+        {!isRoomSelected && Object.keys(groupedTasks).length > 0 && (
           <div className="row">
-            {Object.keys(groupedTasks).map((roomId) => {
+            {Object.keys(groupedTasks).map(roomId => {
               const roomTasks = groupedTasks[roomId];
-              const roomName = roomTasks[0].room_nombre || `Habitación ${roomId}`;
+              const roomName = roomId === "zona_comun" ? "Zona común" : (roomTasks[0].room_nombre || `Habitación ${roomId}`);
+
 
               const todasFinalizadas = roomTasks.every(task => task.condition === 'FINALIZADA');
               const hayPendientes = roomTasks.some(task => task.condition === 'PENDIENTE');
 
-              let iconEstado = '';
-              const iconRoom = <i className="fas fa-bed me-2"></i>;
-
-              if (todasFinalizadas) {
-                iconEstado = '✅';
-              } else if (hayPendientes) {
-                iconEstado = '🕒';
-              } else {
-                iconEstado = '❔';
-              }
+              let iconEstado = todasFinalizadas ? '✅' : hayPendientes ? '🕒' : '❔';
+              const iconRoom = roomId === "zona_comun" ? <i className="fas fa-tree me-2"></i> : <i className="fas fa-bed me-2"></i>;
 
               return (
                 <div key={roomId} className="col-md-6">
@@ -252,18 +230,19 @@ const PrivateMaintenance = () => {
                     className="btn custom-room-button text-start mb-3 w-100 py-2 fw-semibold"
                     onClick={() => handleRoomClick(roomId)}
                   >
-                    {iconRoom} {iconEstado} Habitación: {roomName}
+                    {iconRoom} {iconEstado} {roomId === "zona_comun" ? "Zona común" : `Habitación: ${roomName}`}
+
                   </button>
                 </div>
               );
             })}
           </div>
+        )}
 
-        ) : null}
         {isRoomSelected && (
           <>
             <div className="mt-4">
-              {groupedTasks[selectedRoomId]?.map((task) => (
+              {groupedTasks[selectedRoomId]?.map(task => (
                 <div key={task.id} className="card mb-3 shadow-sm">
                   <div className="card-body">
                     <p><strong>Nombre:</strong> {task.nombre}</p>
@@ -276,7 +255,7 @@ const PrivateMaintenance = () => {
                     </p>
 
                     <div className="mb-3">
-                      <label htmlFor="photo" className="form-label">Foto</label>
+                      <label className="form-label">Foto</label>
                       <CloudinaryApiHotel
                         setPhotoUrl={(url) => handlePhotoUpload(task.id, url)}
                         setErrorMessage={(msg) => handlePhotoError(task.id, msg)}
@@ -297,12 +276,11 @@ const PrivateMaintenance = () => {
                     </div>
 
                     <div className="mt-3 p-3 border rounded d-flex justify-content-around">
-                      {['PENDIENTE', 'EN PROCESO', 'FINALIZADA'].map((status) => (
+                      {['PENDIENTE', 'EN PROCESO', 'FINALIZADA'].map(status => (
                         <button
                           key={status}
                           className={`btn ${status === 'PENDIENTE' ? 'btn-warning' :
-                            status === 'EN PROCESO' ? 'btn-info' : 'btn-success'
-                            }`}
+                            status === 'EN PROCESO' ? 'btn-info' : 'btn-success'}`}
                           onClick={() => handleConditionChange(task.id, selectedRoomId, status)}
                           disabled={task.condition === status}
                         >
@@ -324,19 +302,15 @@ const PrivateMaintenance = () => {
 
             <button
               className="btn custom-room-button w-100 mt-3 fw-semibold py-2"
-              onClick={handleBackToRooms} // o tu función de navegación
+              onClick={handleBackToRooms}
             >
               🔙 Volver a todas las habitaciones
             </button>
-
           </>
         )}
 
         <div className="mt-4 border-top pt-3">
-          <button
-            className="btn btn-outline-danger w-100"
-            onClick={handleLogout}
-          >
+          <button className="btn btn-outline-danger w-100" onClick={handleLogout}>
             Cerrar sesión
           </button>
         </div>
@@ -344,29 +318,20 @@ const PrivateMaintenance = () => {
         <div className="card mt-4 p-3">
           <h5 className="text-center">Filtrar tareas</h5>
           <div className="d-flex justify-content-around">
-            <button
-              className="btn btn-primary"
-              onClick={() => handleFilterTasks('all')}
-            >
+            <button className="btn btn-primary" onClick={() => handleFilterTasks('all')}>
               Todas
             </button>
-            <button
-              className="btn btn-warning"
-              onClick={() => handleFilterTasks('PENDIENTE')}
-            >
+            <button className="btn btn-warning" onClick={() => handleFilterTasks('PENDIENTE')}>
               Pendientes
             </button>
-            <button
-              className="btn btn-success"
-              onClick={() => handleFilterTasks('FINALIZADA')}
-            >
+            <button className="btn btn-success" onClick={() => handleFilterTasks('FINALIZADA')}>
               Finalizadas
             </button>
           </div>
-
         </div>
       </div>
     </div>
   );
 };
+
 export default PrivateMaintenance;

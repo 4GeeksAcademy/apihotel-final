@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 89ee6ee3cdad
+Revision ID: 3632fea6006e
 Revises: 
-Create Date: 2025-03-28 19:39:13.140961
+Create Date: 2025-04-02 12:13:35.638666
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '89ee6ee3cdad'
+revision = '3632fea6006e'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -66,17 +66,6 @@ def upgrade():
     sa.ForeignKeyConstraint(['id_theme'], ['theme.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_table('maintenance',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('nombre', sa.String(length=120), nullable=False),
-    sa.Column('email', sa.String(length=80), nullable=False),
-    sa.Column('password', sa.String(length=80), nullable=False),
-    sa.Column('photo_url', sa.String(length=300), nullable=True),
-    sa.Column('hotel_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['hotel_id'], ['hoteles.id'], ),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('email')
-    )
     op.create_table('housekeeper',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('nombre', sa.String(length=120), nullable=False),
@@ -88,6 +77,19 @@ def upgrade():
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email'),
     sa.UniqueConstraint('nombre')
+    )
+    op.create_table('maintenance',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('nombre', sa.String(length=120), nullable=False),
+    sa.Column('email', sa.String(length=80), nullable=False),
+    sa.Column('password', sa.String(length=80), nullable=False),
+    sa.Column('photo_url', sa.String(length=300), nullable=True),
+    sa.Column('hotel_id', sa.Integer(), nullable=False),
+    sa.Column('branch_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['branch_id'], ['branches.id'], ),
+    sa.ForeignKeyConstraint(['hotel_id'], ['hoteles.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('email')
     )
     op.create_table('room',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -118,6 +120,7 @@ def upgrade():
     sa.Column('maintenance_id', sa.Integer(), nullable=True),
     sa.Column('housekeeper_id', sa.Integer(), nullable=True),
     sa.Column('category_id', sa.Integer(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['category_id'], ['category.id'], ),
     sa.ForeignKeyConstraint(['housekeeper_id'], ['housekeeper.id'], ),
     sa.ForeignKeyConstraint(['maintenance_id'], ['maintenance.id'], ),
@@ -132,8 +135,8 @@ def downgrade():
     op.drop_table('maintenancetask')
     op.drop_table('housekeepertask')
     op.drop_table('room')
-    op.drop_table('housekeeper')
     op.drop_table('maintenance')
+    op.drop_table('housekeeper')
     op.drop_table('hoteltheme')
     op.drop_table('branches')
     op.drop_table('user')

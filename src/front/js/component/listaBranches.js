@@ -3,6 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { Context } from "../store/appContext";
 import AutocompleteWithMap from "./autoComplete";
 import PrivateLayout from "./privateLayout";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPen, faTrash, faPlus, faSave } from "@fortawesome/free-solid-svg-icons";
+
 
 const Branches = () => {
   const { store, actions } = useContext(Context);
@@ -65,7 +68,7 @@ const Branches = () => {
   return (
     <PrivateLayout>
       <div className="container">
-        <h2 className="text-center my-3">Branches</h2>
+        <h2 className="text-center my-3">Sucursales</h2>
 
         <div className="d-flex justify-content-center align-items-center mb-4">
           <button
@@ -76,8 +79,10 @@ const Branches = () => {
               setMostrarFormulario(true);
             }}
           >
-            Crear Branch
+            <FontAwesomeIcon icon={faPlus} className="me-1" />
+            Crear Sucursal
           </button>
+
         </div>
 
         <div className="row bg-light p-2 fw-bold border-bottom">
@@ -107,15 +112,20 @@ const Branches = () => {
                     setMostrarFormulario(true);
                   }}
                 >
-                  Editar
+                  <FontAwesomeIcon icon={faPen} className="me-1" />
+              
                 </button>
+
+
                 <button
-                  className="btn"
-                  style={{ backgroundColor: "#0dcaf0", border: "none", color: "white" }}
+                  className="btn btn-danger"
                   onClick={() => eliminarBranch(branch.id)}
                 >
-                  Eliminar
+                  <FontAwesomeIcon icon={faTrash} className="me-1" />
+          
                 </button>
+
+
               </div>
             </div>
           ))}
@@ -123,7 +133,7 @@ const Branches = () => {
         {mostrarFormulario && (
           <div className="card p-4 mt-5">
             <h3 className="text-center mb-4">
-              {branchSeleccionado ? "Editar Branch" : "Crear Branch"}
+              {branchSeleccionado ? "Editar Sucursal" : "Crear Sucursal"}
             </h3>
             <form onSubmit={handleSubmit}>
               <input
@@ -147,8 +157,10 @@ const Branches = () => {
                 className="btn w-100"
                 style={{ backgroundColor: "#0dcaf0", border: "none", color: "white" }}
               >
-                {branchSeleccionado ? "Guardar Cambios" : "Crear Branch"}
+                <FontAwesomeIcon icon={faSave} className="me-2" />
+                {branchSeleccionado ? "Guardar Cambios" : "Crear Sucursal"}
               </button>
+
             </form>
           </div>
         )}

@@ -47,7 +47,7 @@ const PrivateHotel = () => {
     return (
       <div className="d-flex" style={{ height: "100vh" }}>
         <Sidebar collapsed={collapsed} toggleCollapsed={() => setCollapsed(!collapsed)} />
-        <div className="flex-fill d-flex align-items-center justify-content-center" style={{ 
+        <div className="flex-fill d-flex align-items-center justify-content-center" style={{
           marginLeft: collapsed ? "70px" : "250px",
           backgroundColor: "#f5f7fb"
         }}>
@@ -61,12 +61,9 @@ const PrivateHotel = () => {
 
   return (
     <div className="d-flex">
-      {/* Sidebar con el color de Hyper */}
       <Sidebar collapsed={collapsed} toggleCollapsed={() => setCollapsed(!collapsed)} />
 
-      {/* Contenido principal */}
       <div className="flex-fill" style={{ marginLeft: collapsed ? "70px" : "250px", transition: "margin-left 0.3s ease", backgroundColor: "#f5f7fb", height: "100vh", overflow: "hidden" }}>
-        {/* Header */}
         <div className="p-4 border-bottom bg-white">
           <div className="d-flex justify-content-between align-items-center">
             <h4 className="mb-0">Dashboard</h4>
@@ -81,9 +78,8 @@ const PrivateHotel = () => {
           </div>
         </div>
 
-        {/* Contenido del dashboard */}
         <div className="p-4" style={{ height: "calc(100vh - 72px)", overflow: "auto" }}>
-          {/* Estadísticas rápidas */}
+          {/* Estadísticas */}
           <div className="row mb-4">
             <div className="col-md-6 col-xl-3">
               <div className="card bg-primary text-white">
@@ -142,120 +138,42 @@ const PrivateHotel = () => {
             </div>
           </div>
 
-          {/* Sección principal */}
-          <div className="row">
-            {/* Personal */}
-            <div className="col-xl-6">
-              <div className="card">
-                <div className="card-body">
-                  <h4 className="card-title mb-4">Equipo de Trabajo</h4>
-                  
-                  <div className="row">
-                    <div className="col-md-6">
-                      <div className="card border">
-                        <div className="card-body text-center">
-                          <i className="fas fa-user-nurse text-primary mb-3" style={{ fontSize: "2rem" }}></i>
-                          <h5>Camareras</h5>
-                          <h2>{datos.camareras}</h2>
-                          <Link to="/houseKeeper" className="btn btn-sm btn-primary mt-2">
-                            Gestionar
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
+          {/* Equipo de trabajo */}
+          <div className="col-xl-12">
+            <div className="card shadow-sm">
+              <div className="card-body">
+                <h4 className="card-title mb-4">👥 Equipo de Trabajo</h4>
+                <div className="row gy-4">
 
-                    <div className="col-md-6">
-                      <div className="card border">
-                        <div className="card-body text-center">
-                          <i className="fas fa-tools text-info mb-3" style={{ fontSize: "2rem" }}></i>
-                          <h5>Técnicos</h5>
-                          <h2>{datos.tecnicos}</h2>
-                          <Link to="/listaMaintenance" className="btn btn-sm btn-info mt-2">
-                            Gestionar
-                          </Link>
-                        </div>
+                  <div className="col-md-6">
+                    <div className="card border-0 bg-light p-4 text-center">
+                      <i className="fas fa-user-nurse fa-2x text-primary mb-2"></i>
+                      <h5 className="fw-bold mb-0">Camareras</h5>
+                      <p className="text-muted">Tareas asignadas: <strong>{datos.tareasLimpieza}</strong></p>
+                      <div className="d-grid gap-2">
+                        <Link to="/houseKeeper" className="btn btn-outline-primary btn-sm">Gestionar</Link>
+                        <Link to="/houseKeeperWorkLog" className="btn btn-primary btn-sm">Ver Registro</Link>
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            </div>
 
-            {/* Tareas */}
-            <div className="col-xl-6">
-              <div className="card">
-                <div className="card-body">
-                  <h4 className="card-title mb-4">Tareas Pendientes</h4>
-                  
-                  <div className="row">
-                    <div className="col-md-6">
-                      <div className="card border">
-                        <div className="card-body text-center">
-                          <i className="fas fa-broom text-teal mb-3" style={{ fontSize: "2rem" }}></i>
-                          <h5>Limpieza</h5>
-                          <h2>{datos.tareasLimpieza}</h2>
-                          <Link to="/HouseKeeperTask" className="btn btn-sm btn-teal mt-2">
-                            Ver tareas
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="col-md-6">
-                      <div className="card border">
-                        <div className="card-body text-center">
-                          <i className="fas fa-wrench text-orange mb-3" style={{ fontSize: "2rem" }}></i>
-                          <h5>Mantenimiento</h5>
-                          <h2>{datos.tareasMantenimiento}</h2>
-                          <Link to="/maintenanceTask" className="btn btn-sm btn-orange mt-2">
-                            Ver tareas
-                          </Link>
-                        </div>
+                  <div className="col-md-6">
+                    <div className="card border-0 bg-light p-4 text-center">
+                      <i className="fas fa-tools fa-2x text-info mb-2"></i>
+                      <h5 className="fw-bold mb-0">Técnicos</h5>
+                      <p className="text-muted">Tareas asignadas: <strong>{datos.tareasMantenimiento}</strong></p>
+                      <div className="d-grid gap-2">
+                        <Link to="/listaMaintenance" className="btn btn-outline-info btn-sm">Gestionar</Link>
+                        <Link to="/maintenanceWorkLog" className="btn btn-info btn-sm">Ver Registro</Link>
                       </div>
                     </div>
                   </div>
+
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Última sección */}
-          <div className="row mt-4">
-            <div className="col-xl-12">
-              <div className="card">
-                <div className="card-body">
-                  <h4 className="card-title mb-4">Resumen General</h4>
-                  
-                  <div className="row text-center">
-                    <div className="col-md-3">
-                      <div className="p-3 border rounded">
-                        <h6>Sucursales</h6>
-                        <h3>{datos.sucursales}</h3>
-                      </div>
-                    </div>
-                    <div className="col-md-3">
-                      <div className="p-3 border rounded">
-                        <h6>Habitaciones</h6>
-                        <h3>{datos.habitaciones}</h3>
-                      </div>
-                    </div>
-                    <div className="col-md-3">
-                      <div className="p-3 border rounded">
-                        <h6>Personal</h6>
-                        <h3>{datos.camareras + datos.tecnicos}</h3>
-                      </div>
-                    </div>
-                    <div className="col-md-3">
-                      <div className="p-3 border rounded">
-                        <h6>Tareas</h6>
-                        <h3>{datos.tareasLimpieza + datos.tareasMantenimiento}</h3>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

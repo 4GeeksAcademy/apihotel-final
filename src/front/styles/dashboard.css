@@ -1,0 +1,23 @@
+@media print {
+    body * {
+      visibility: hidden;
+    }
+    .container, .container * {
+      visibility: visible;
+    }
+    .container {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+    }
+  
+    .sidebar, .navbar, .btn, input, select {
+      display: none !important;
+    }
+  
+    table {
+      font-size: 12px;
+    }
+  }
+  

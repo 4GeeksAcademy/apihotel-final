@@ -1,7 +1,7 @@
 {
 	"name": "react-hello-webapp",
 	"engines": {
-		"node": "16.x"
+		"node": "18.x"
 	},
 	"version": "1.0.1",
 	"description": "",
@@ -84,12 +84,14 @@
 		"cors": "^2.8.5",
 		"font-awesome": "^4.7.0",
 		"googleapis": "^146.0.0",
+		"html2pdf.js": "^0.10.3",
 		"jwt-decode": "^4.0.0",
 		"prop-types": "^15.6.1",
 		"react": "^16.8.4",
 		"react-dom": "^16.8.4",
 		"react-places-autocomplete": "^7.3.0",
 		"react-polyfills": "0.0.1",
-		"react-router-dom": "^6.3.0"
+		"react-router-dom": "^6.3.0",
+		"socket.io-client": "^4.8.1"
 	}
 }

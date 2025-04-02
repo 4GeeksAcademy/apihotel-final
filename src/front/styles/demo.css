@@ -10,16 +10,17 @@
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2) !important;
 }
 
-/* Ajustes para móviles */
-@media (max-width: 768px) {
-    .demo-hero {
-        min-height: 40vh !important; /* Altura reducida en móviles */
-    }
-    .role-card {
-        margin-bottom: 1rem; /* Espacio entre tarjetas */
-    }
+
+.demo-page .no-navbar {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
-/* En tu archivo CSS global */
-.no-navbar .navbar {
-    display: none !important;
-  }
+
+.demo-page .no-navbar section {
+    flex: 1;
+}
+
+.demo-page footer {
+    margin-top: auto;
+}

@@ -31,9 +31,14 @@ import LoginMaintenance from "./pages/loginMaintenance";
 import PrivateMaintenance from './pages/privateMaintenance';
 import ProtectedPrivateMaintenance from './pages/ProtectedPrivateMaintenance';
 import { Footer } from "./component/footer";
-import Chatbot from "./component/chatBot";
 import TaskFilterView from './pages/TaskFilterView';
 import TaskFilterView2 from './pages/TaskFilterView2';
+import MaintenanceWorkLog from "./pages/maintenanceWorkLog";
+import HousekeeperWorkLog from "./pages/houseKeeperWorkLog";
+
+
+
+
 
 const Layout = () => {
   const basename = process.env.BASENAME || "";
@@ -88,6 +93,9 @@ const RouterContent = () => {
           <Route element={<ProtectedPrivateMaintenance><PrivateMaintenance /></ProtectedPrivateMaintenance>} path="/privateMaintenance" />
           <Route element={<TaskFilterView />} path="/task-filter" />
           <Route element={<TaskFilterView2 />} path="/task-filter-housekeeper" />
+          <Route element={<HousekeeperWorkLog />} path="/housekeeperWorkLog"  />
+          <Route element={<MaintenanceWorkLog />} path="/maintenanceWorkLog"  />
+
           <Route element={<h1>Not found!</h1>} path="*" />
         </Routes>
       </main>
