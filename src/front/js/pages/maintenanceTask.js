@@ -3,7 +3,7 @@ import { Context } from "../store/appContext";
 import CloudinaryApiHotel from "../component/cloudinaryApiHotel";
 import PrivateLayout from "../component/privateLayout";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPen, faTrash, faSave, faTimes, faClock, faSpinner, faCheckCircle } from "@fortawesome/free-solid-svg-icons";
+import { faPen, faTrash, faSave, faTimes } from "@fortawesome/free-solid-svg-icons";
 
 const MaintenanceTask = () => {
   const { store, actions } = useContext(Context);

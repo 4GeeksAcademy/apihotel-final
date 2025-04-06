@@ -1,17 +1,45 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const TaskFilterView2 = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { view = 'all', tasks = [] } = location.state || {};
+  const backendUrl = process.env.REACT_APP_BACKEND_URL || process.env.BACKEND_URL;
+
+  const [taskList, setTaskList] = useState(tasks);
 
   const filterTasksByCondition = (tasks, condition) => {
     if (condition === 'all') return tasks;
     return tasks.filter(task => task.condition === condition);
   };
 
-  const filteredTasks = filterTasksByCondition(tasks, view);
+  const filteredTasks = filterTasksByCondition(taskList, view);
+
+  const handleConditionChange = async (taskId, newCondition) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const response = await fetch(`${backendUrl}api/maintenancetasks/${taskId}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ condition: newCondition })
+      });
+
+      if (!response.ok) throw new Error("Error al actualizar tarea");
+
+      const updated = await response.json();
+      const updatedTask = updated.task;
+
+      setTaskList(prev => prev.map(t => t.id === taskId ? { ...t, condition: updatedTask.condition } : t));
+    } catch (error) {
+      console.error("Error al actualizar tarea:", error);
+    }
+  };
 
   const getTitle = () => {
     switch(view) {
@@ -55,6 +83,20 @@ const TaskFilterView2 = () => {
                     />
                   </div>
                 )}
+
+                <div className="mt-3 d-flex justify-content-around">
+                  {['PENDIENTE', 'EN PROCESO', 'FINALIZADA'].map(status => (
+                    <button
+                      key={status}
+                      className={`btn ${status === 'PENDIENTE' ? 'btn-danger' :
+                        status === 'EN PROCESO' ? 'btn-warning' : 'btn-success'}`}
+                      onClick={() => handleConditionChange(task.id, status)}
+                      disabled={task.condition === status}
+                    >
+                      {status}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           ))}
@@ -63,7 +105,7 @@ const TaskFilterView2 = () => {
         <div className="d-flex justify-content-center">
           <button 
             className="btn btn-primary mt-3 px-5 py-2" 
-            onClick={() => navigate('/privateHouseKeeper')}
+            onClick={() => navigate('/privateMaintenance')}
           >
             Volver a la vista principal
           </button>

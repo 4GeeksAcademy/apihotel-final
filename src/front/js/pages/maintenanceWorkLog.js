@@ -22,10 +22,9 @@ const MaintenanceWorkLog = () => {
 
   const filteredTasks = store.maintenanceTasks.filter(task => {
     const tech = store.maintenances.find(m => m.id === task.maintenance_id);
-    const finalizadoPor = store.maintenances.find(m => m.id === task.finalizado_por_id);
     const room = store.rooms.find(r => r.id === task.room_id);
 
-    const createdBy = tech?.nombre || task.housekeeper?.nombre || task.finalizado_por || "";
+    const createdBy = tech?.nombre || task.housekeeper?.nombre || "";
     const matchesName = createdBy.toLowerCase().includes(search.toLowerCase());
 
     const matchesDate = dateFilter ? task.created_at?.startsWith(dateFilter) : true;
@@ -37,7 +36,6 @@ const MaintenanceWorkLog = () => {
 
     return shouldShow && matchesName && matchesDate && matchesBranch;
   });
-
 
   const uniqueTechnicians = [...new Set(filteredTasks.map(task => task.maintenance_id))];
 
@@ -134,7 +132,6 @@ const MaintenanceWorkLog = () => {
             <tbody>
               {filteredTasks.map(task => {
                 const tech = store.maintenances.find(m => m.id === task.maintenance_id);
-                const finalizadoPor = store.maintenances.find(m => m.id === task.finalizado_por_id);
                 const room = store.rooms.find(r => r.id === task.room_id);
                 const branch = task.room_id
                   ? store.branches.find(b => b.id === room?.branch_id)
@@ -145,7 +142,7 @@ const MaintenanceWorkLog = () => {
                 return (
                   <tr key={task.id} className={task.housekeeper_id ? "table-info" : ""}>
                     <td>
-                      {tech?.nombre || finalizadoPor?.nombre || task.finalizado_por || "No asignado"}
+                      {tech?.nombre || task.housekeeper?.nombre || "No asignado"}
                     </td>
                     <td>{task.nombre}</td>
                     <td>{task.created_at?.split("T")[0]}</td>
@@ -156,11 +153,6 @@ const MaintenanceWorkLog = () => {
                         <FontAwesomeIcon icon={icon} className="me-1" />
                         {task.condition}
                       </span>
-                      {task.finalizado_por && (
-                        <div className="text-muted small mt-1">
-                          Finalizado por: {finalizadoPor?.nombre || task.finalizado_por}
-                        </div>
-                      )}
                       {task.housekeeper_id && (
                         <div className="text-info small mt-1">
                           🧹 Creado por: {task.housekeeper?.nombre || "Camarera"}
@@ -170,7 +162,6 @@ const MaintenanceWorkLog = () => {
                   </tr>
                 );
               })}
-
             </tbody>
           </table>
         </div>

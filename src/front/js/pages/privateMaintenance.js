@@ -107,12 +107,10 @@ const PrivateMaintenance = () => {
 
       const updatedTask = {
         condition: newCondition,
-        photo_url: currentPhoto,
-        finalizado_por_id: newCondition === "FINALIZADA" ? jwtDecode(token).maintenance_id : null
-
+        photo_url: currentPhoto
       };
-      
-      
+  
+               
 
       setTasks(prevTasks =>
         prevTasks.map(task => task.id === taskId ? { ...task, ...updatedTask } : task)
