@@ -72,7 +72,7 @@ const PrivateMaintenance = () => {
       return acc;
     }, {});
   };
-  
+
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -105,7 +105,13 @@ const PrivateMaintenance = () => {
 
       const currentPhoto = taskPhotos[taskId] || tasks.find(t => t.id === taskId)?.photo_url || null;
 
-      const updatedTask = { condition: newCondition, photo_url: currentPhoto };
+      const updatedTask = {
+        condition: newCondition,
+        photo_url: currentPhoto,
+        finalizado_por: newCondition === "FINALIZADA" ? jwtDecode(token).sub : null
+      };
+      
+      
 
       setTasks(prevTasks =>
         prevTasks.map(task => task.id === taskId ? { ...task, ...updatedTask } : task)
@@ -217,25 +223,44 @@ const PrivateMaintenance = () => {
               const roomTasks = groupedTasks[roomId];
               const roomName = roomId === "zona_comun" ? "Zona común" : (roomTasks[0].room_nombre || `Habitación ${roomId}`);
 
-
+              // Estado de las tareas
               const todasFinalizadas = roomTasks.every(task => task.condition === 'FINALIZADA');
               const hayPendientes = roomTasks.some(task => task.condition === 'PENDIENTE');
+              const hayEnProceso = roomTasks.some(task => task.condition === 'EN PROCESO');
 
-              let iconEstado = todasFinalizadas ? '✅' : hayPendientes ? '🕒' : '❔';
-              const iconRoom = roomId === "zona_comun" ? <i className="fas fa-tree me-2"></i> : <i className="fas fa-bed me-2"></i>;
+              let iconEstado = "❔";
+              let bgEstado = "secondary";
+
+              if (todasFinalizadas) {
+                iconEstado = "✅";
+
+              } else if (hayPendientes) {
+                iconEstado = "🕒";
+
+              } else if (hayEnProceso) {
+                iconEstado = "🔧";
+              }
+
+              const iconRoom = roomId === "zona_comun"
+                ? <i className="fas fa-tree me-2"></i>
+                : <i className="fas fa-bed me-2"></i>;
 
               return (
                 <div key={roomId} className="col-md-6">
                   <button
-                    className="btn custom-room-button text-start mb-3 w-100 py-2 fw-semibold"
+                    className="btn custom-room-button text-start mb-3 w-100 py-2 fw-semibold d-flex justify-content-between align-items-center"
                     onClick={() => handleRoomClick(roomId)}
                   >
-                    {iconRoom} {iconEstado} {roomId === "zona_comun" ? "Zona común" : `Habitación: ${roomName}`}
+                    <span>{iconRoom} {roomName}</span>
+                    <span className="fs-5">
+                      {iconEstado}
+                    </span>
 
                   </button>
                 </div>
               );
             })}
+
           </div>
         )}
 
@@ -247,8 +272,8 @@ const PrivateMaintenance = () => {
                   <div className="card-body">
                     <p><strong>Nombre:</strong> {task.nombre}</p>
                     <p><strong>Estado actual:</strong>
-                      <span className={`badge ${task.condition === 'PENDIENTE' ? 'bg-warning' :
-                        task.condition === 'EN PROCESO' ? 'bg-info' : 'bg-success'
+                      <span className={`badge ${task.condition === 'PENDIENTE' ? 'bg-danger' :
+                        task.condition === 'EN PROCESO' ? 'bg-warning' : 'bg-success'
                         } ms-2`}>
                         {task.condition}
                       </span>
@@ -279,8 +304,8 @@ const PrivateMaintenance = () => {
                       {['PENDIENTE', 'EN PROCESO', 'FINALIZADA'].map(status => (
                         <button
                           key={status}
-                          className={`btn ${status === 'PENDIENTE' ? 'btn-warning' :
-                            status === 'EN PROCESO' ? 'btn-info' : 'btn-success'}`}
+                          className={`btn ${status === 'PENDIENTE' ? 'btn-danger' :
+                            status === 'EN PROCESO' ? 'btn-warning' : 'btn-success'}`}
                           onClick={() => handleConditionChange(task.id, selectedRoomId, status)}
                           disabled={task.condition === status}
                         >
@@ -318,10 +343,10 @@ const PrivateMaintenance = () => {
         <div className="card mt-4 p-3">
           <h5 className="text-center">Filtrar tareas</h5>
           <div className="d-flex justify-content-around">
-            <button className="btn btn-primary" onClick={() => handleFilterTasks('all')}>
+            <button className="btn btn" style={{ background: "#0dcaf0", color:"white" }} onClick={() => handleFilterTasks('all')}>
               Todas
             </button>
-            <button className="btn btn-warning" onClick={() => handleFilterTasks('PENDIENTE')}>
+            <button className="btn btn-danger" onClick={() => handleFilterTasks('PENDIENTE')}>
               Pendientes
             </button>
             <button className="btn btn-success" onClick={() => handleFilterTasks('FINALIZADA')}>

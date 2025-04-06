@@ -11,6 +11,7 @@ const ListaRoom = () => {
   const [numPlantas, setNumPlantas] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [editNombre, setEditNombre] = useState("");
   const [eliminando, setEliminando] = useState(null);
 
   useEffect(() => {
@@ -46,10 +47,19 @@ const ListaRoom = () => {
       rooms_per_floor: habitacionesArray
     });
 
-    resetForm(); 
+    resetForm();
   };
 
-    
+  const guardarEdicion = async (roomId) => {
+    if (!editNombre.trim()) return alert("El nombre no puede estar vacío");
+
+    const room = store.rooms.find(r => r.id === roomId);
+    await actions.createOrUpdateRoom({ nombre: editNombre }, room);
+
+    setEditingId(null);
+    setEditNombre("");
+  };
+
 
   const eliminarRoom = async (id) => {
     if (!window.confirm("¿Estás segura/o de que quieres eliminar esta habitación?")) return;
@@ -140,15 +150,61 @@ const ListaRoom = () => {
                       ) : (
                         roomsPorSucursal[branch.id].map((room) => (
                           <div key={room.id} className="d-flex justify-content-between align-items-center border-bottom py-2">
-                            <span>{room.nombre}</span>
-                            <button
-                              className="btn btn-sm btn-danger"
-                              onClick={() => eliminarRoom(room.id)}
-                              disabled={eliminando === room.id}
-                            >
-                              {eliminando === room.id ? "..." : <FontAwesomeIcon icon={faTrash} />}
-                            </button>
-                          </div>
+                          {editingId === room.id ? (
+                            <>
+                              <input
+                                type="text"
+                                className="form-control form-control-sm me-2"
+                                value={editNombre}
+                                onChange={(e) => setEditNombre(e.target.value)}
+                                onKeyDown={(e) => e.key === "Enter" && guardarEdicion(room.id)}
+                                autoFocus
+                              />
+                              <button
+                                className="btn btn-sm"
+                                style={{ backgroundColor: "#0dcaf0", color: "white" }}
+                                onClick={() => guardarEdicion(room.id)}
+                              >
+                                <FontAwesomeIcon icon={faSave} />
+                              </button>
+                              <button
+                                className="btn btn-sm btn-secondary ms-2"
+                                onClick={() => {
+                                  setEditingId(null);
+                                  setEditNombre("");
+                                }}
+                              >
+                                <FontAwesomeIcon icon={faTimes} />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <span>{room.nombre}</span>
+                              <div className="d-flex gap-2">
+                                <button
+                                  className="btn btn-sm"
+                                  style={{ backgroundColor: "#0dcaf0", color: "white" }}
+                                  onClick={() => {
+                                    setEditingId(room.id);
+                                    setEditNombre(room.nombre);
+                                  }}
+                                >
+                                  <FontAwesomeIcon icon={faPen} />
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-danger"
+                                  onClick={() => eliminarRoom(room.id)}
+                                  disabled={eliminando === room.id}
+                                >
+                                  {eliminando === room.id ? "..." : <FontAwesomeIcon icon={faTrash} />}
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        
+                        
+
                         ))
                       )}
                     </div>

@@ -23,15 +23,15 @@ const Branches = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     const branchData = {
       nombre,
       direccion,
-      longitud,
-      latitud,
+      longitud: longitud === "" ? null : parseFloat(longitud),
+      latitud: latitud === "" ? null : parseFloat(latitud),
       hotel_id: parseInt(store.hotel.id),
     };
-
+  
     try {
       await actions.createOrUpdateBranch(branchData, branchSeleccionado);
       await actions.getBranches();
@@ -41,6 +41,7 @@ const Branches = () => {
       alert(error.message);
     }
   };
+  
 
   const eliminarBranch = async (id) => {
     try {

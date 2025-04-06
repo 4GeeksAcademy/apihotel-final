@@ -271,8 +271,7 @@ export const Home = () => {
                 <div className="container text-center">
                     <h2 className="fw-bold mb-4">¿Listo para optimizar tu operación?</h2>
                     <p className="lead mb-4">Contáctanos para una demo personalizada.</p>
-                    <button className="btn btn-info btn-lg px-4">Solicitar Acceso</button>
-                </div>
+                 </div>   
             </section>
 
             {/* --- Contact Form --- */}
@@ -383,8 +382,6 @@ export const Home = () => {
                             <ul className="list-unstyled ps-0 mb-0 mt-3">
                                 <li className="mt-2"><a href="#!" className="text-light text-opacity-50">Sobre nosotros</a></li>
                                 <li className="mt-2"><a href="#!" className="text-light text-opacity-50">Documentación</a></li>
-                                <li className="mt-2"><a href="#!" className="text-light text-opacity-50">Blog</a></li>
-                                <li className="mt-2"><a href="#!" className="text-light text-opacity-50">Programa de afiliados</a></li>
                             </ul>
                         </div>
 

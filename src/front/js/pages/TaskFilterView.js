@@ -25,7 +25,7 @@ const TaskFilterView = () => {
   return (
     <div className="d-flex justify-content-center align-items-center min-vh-100 bg-light">
       <div className="card shadow-lg p-4" style={{ maxWidth: '800px', width: '100%' }}>
-        <h2 className="text-center mb-4 text-primary">
+        <h2 className="text-center mb-4" style={{ color: "#0dcaf0" }}>
           {view === 'all' ? 'Todas las tareas' : 
            view === 'PENDIENTE' ? 'Tareas Pendientes' : 'Tareas Finalizadas'}
         </h2>
@@ -37,8 +37,8 @@ const TaskFilterView = () => {
                 <p><strong>Nombre:</strong> {task.nombre}</p>
                 <p><strong>Estado:</strong> 
                   <span className={`badge ${
-                    task.condition === 'PENDIENTE' ? 'bg-warning' :
-                    task.condition === 'EN PROCESO' ? 'bg-info' : 'bg-success'
+                    task.condition === 'PENDIENTE' ? 'bg-danger' :
+                    task.condition === 'EN PROCESO' ? 'bg-warning' : 'bg-success'
                   } ms-2`}>
                     {task.condition}
                   </span>
@@ -63,7 +63,7 @@ const TaskFilterView = () => {
 
         <div className="d-flex justify-content-center">
           <button 
-            className="btn btn-primary mt-3 px-5 py-2" 
+            className="btn btn mt-3 px-5 py-2" style={{ background: "#0dcaf0" }} 
             onClick={() => navigate('/privateMaintenance')}
           >
             Volver a la vista principal

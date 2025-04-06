@@ -3,7 +3,7 @@ import { Context } from "../store/appContext";
 import CloudinaryApiHotel from "../component/cloudinaryApiHotel";
 import PrivateLayout from "../component/privateLayout";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPen, faTrash, faSave, faTimes } from "@fortawesome/free-solid-svg-icons";
+import { faPen, faTrash, faSave, faTimes, faClock, faSpinner, faCheckCircle } from "@fortawesome/free-solid-svg-icons";
 
 const MaintenanceTask = () => {
   const { store, actions } = useContext(Context);
@@ -85,7 +85,7 @@ const MaintenanceTask = () => {
     setIdMaintenance(task.maintenance_id || '');
     setEditingId(task.id);
     setEsZonaComun(task.room_id === null);
-   
+
   };
 
   const cancelEdit = () => resetForm();
@@ -107,15 +107,19 @@ const MaintenanceTask = () => {
     );
     return task ? task.condition : null;
   };
-
   const getColorClassForCondition = (condition) => {
     switch (condition) {
-      case 'PENDIENTE': return 'btn-danger';
-      case 'EN PROCESO': return 'btn-warning';
-      case 'FINALIZADA': return 'btn-success';
-      default: return 'btn-outline-secondary';
+      case "PENDIENTE":
+        return "bg-danger text-white";
+      case "EN PROCESO":
+        return "bg-warning text-dark";
+      case "FINALIZADA":
+        return "bg-success text-white";
+      default:
+        return "bg-secondary text-white";
     }
   };
+  
 
   const toggleRoomSelection = (roomId) => {
     const existing = getTaskConditionForRoom(roomId);
@@ -196,7 +200,7 @@ const MaintenanceTask = () => {
                       </div>
                     )}
                   </div>
-                  
+
 
                   <div className="form-group mb-2">
                     <label className="small">Estado</label>
@@ -245,10 +249,16 @@ const MaintenanceTask = () => {
                       <td>{isReportedByHousekeeper ? task.housekeeper?.nombre || "Camarera" : task.maintenance?.nombre || "Técnico"}</td>
                       <td>{task.nombre}</td>
                       <td>
-                        <span className={`badge ${task.condition === 'PENDIENTE' ? 'bg-danger' : task.condition === 'EN PROCESO' ? 'bg-warning text-dark' : 'bg-success'}`}>
-                          {task.condition}
-                        </span>
+                        {(() => {
+                          return (
+                            <span className={`badge ${getColorClassForCondition(task.condition)}`}>
+                            {task.condition}
+                          </span>
+                          
+                          );
+                        })()}
                       </td>
+
                       <td>
                         {task.room?.branch_id
                           ? store.branches.find(b => b.id === task.room.branch_id)?.nombre || "-"

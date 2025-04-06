@@ -9,6 +9,9 @@ from api.commands import setup_commands
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
+from flasgger import Swagger
+
+
 
 # Cargar variables de entorno
 load_dotenv()
@@ -21,6 +24,7 @@ db_url = os.getenv("DATABASE_URL")
 # Inicializar app Flask
 app = Flask(__name__)
 app.url_map.strict_slashes = False
+swagger = Swagger(app)
 
 # CORS para permitir acceso desde React
 
