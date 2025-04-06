@@ -108,7 +108,8 @@ const PrivateMaintenance = () => {
       const updatedTask = {
         condition: newCondition,
         photo_url: currentPhoto,
-        finalizado_por: newCondition === "FINALIZADA" ? jwtDecode(token).sub : null
+        finalizado_por_id: newCondition === "FINALIZADA" ? jwtDecode(token).maintenance_id : null
+
       };
       
       

@@ -224,6 +224,7 @@ class HouseKeeperTask(db.Model):
 
 class MaintenanceTask(db.Model):
     __tablename__ = 'maintenancetask'
+
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(120), nullable=False)
     photo_url = db.Column(db.String(500), nullable=True)
@@ -233,12 +234,13 @@ class MaintenanceTask(db.Model):
     housekeeper_id = db.Column(db.Integer, db.ForeignKey('housekeeper.id'), nullable=True)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
-    finalizado_por = db.Column(db.String(120), nullable=True)
+    
+    finalizado_por_id = db.Column(db.Integer, db.ForeignKey('maintenance.id'), nullable=True)  # <--- NUEVA CLAVE FK
 
-
-
+    # Relaciones
     room = db.relationship('Room', back_populates='maintenance_tasks')
-    maintenance = db.relationship('Maintenance')
+    maintenance = db.relationship('Maintenance', foreign_keys=[maintenance_id])  # <- EXPLÍCITO
+    finalizado_por = db.relationship('Maintenance', foreign_keys=[finalizado_por_id])  # <- EXPLÍCITO
     housekeeper = db.relationship('HouseKeeper')
     category = db.relationship('Category')
 
@@ -257,14 +259,14 @@ class MaintenanceTask(db.Model):
             "maintenance": self.maintenance.serialize() if self.maintenance else None,
             "maintenance_id": self.maintenance_id,
             "maintenance_nombre": self.maintenance.nombre if self.maintenance else None,
+            "finalizado_por_id": self.finalizado_por_id,
+            "finalizado_por": self.finalizado_por.serialize() if self.finalizado_por else None,
             "housekeeper": self.housekeeper.serialize() if self.housekeeper else None,
             "housekeeper_id": self.housekeeper_id,
-            "housekeeper_nombre": self.housekeeper.nombre if self.housekeeper else None,  
+            "housekeeper_nombre": self.housekeeper.nombre if self.housekeeper else None,
             "category": self.category.serialize() if self.category else None,
             "category_id": self.category_id,
             "created_at": self.created_at.isoformat() if self.created_at else None,
-            "finalizado_por": self.finalizado_por,
-
-
         }
+
 

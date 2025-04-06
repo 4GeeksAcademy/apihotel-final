@@ -1569,6 +1569,7 @@ def create_maintenance_task():
 
 
 @api.route('/maintenancetasks/<int:id>', methods=['PUT'])
+@jwt_required()
 def update_maintenance_task(id):
     """Actualizar una tarea de mantenimiento existente"""
     maintenance_task = MaintenanceTask.query.get(id)
@@ -1579,35 +1580,33 @@ def update_maintenance_task(id):
     data = request.get_json()
 
     try:
-        # Actualización condicional de campos
+        # Actualización de campos comunes
         if 'nombre' in data:
             maintenance_task.nombre = data['nombre']
-            
-        # Manejo mejorado de la foto - siempre actualizar si viene en el request
+
         if 'photo_url' in data:
-            maintenance_task.photo_url = data['photo_url'] if data['photo_url'] else None
-            
-        # Manejo robusto del campo condition
+            maintenance_task.photo_url = data['photo_url'] or None
+
         if 'condition' in data:
             new_condition = data['condition']
             if new_condition not in ['PENDIENTE', 'EN PROCESO', 'FINALIZADA']:
                 return jsonify({"message": "Estado no válido. Valores permitidos: PENDIENTE, EN PROCESO, FINALIZADA"}), 400
             maintenance_task.condition = new_condition
 
-        # Si la tarea se marca como finalizada, registrar quién la finalizó
-        if new_condition == 'FINALIZADA':
-            maintenance_task.finalizado_por = data.get('finalizado_por') 
+            # Si se finaliza, registrar quién la finalizó (según JWT)
+            if new_condition == 'FINALIZADA':
+                email = get_jwt_identity()
+                technician = Maintenance.query.filter_by(email=email).first()
+                if not technician:
+                    return jsonify({"message": "Técnico no encontrado"}), 404
+                maintenance_task.finalizado_por_id = technician.id
 
-        # Campos opcionales (solo actualizar si vienen en el request)
-        optional_fields = ['room_id', 'maintenance_id', 'housekeeper_id', 'category_id']
-        for field in optional_fields:
+        # Actualizar campos opcionales si vienen
+        for field in ['room_id', 'maintenance_id', 'housekeeper_id', 'category_id']:
             if field in data:
                 setattr(maintenance_task, field, data[field])
 
-        # Forzar la actualización del timestamp (si tu modelo lo tiene)
-        if hasattr(maintenance_task, 'updated_at'):
-            maintenance_task.updated_at = datetime.utcnow()
-
+        # Guardar cambios
         db.session.commit()
 
         return jsonify({
@@ -1621,13 +1620,15 @@ def update_maintenance_task(id):
             "message": "Error de integridad en la base de datos",
             "error": str(e.orig)
         }), 400
-        
+
     except Exception as e:
         db.session.rollback()
         return jsonify({
             "message": "Error al actualizar la tarea",
             "error": str(e)
         }), 400
+
+
 
 
 @api.route('/maintenancetasks/<int:id>', methods=['DELETE'])
