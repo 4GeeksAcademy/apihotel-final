@@ -311,174 +311,86 @@ const PrivateHouseKeeper = () => {
       <div className="main-card">
         <h2 className="main-title">Tareas de Camarera</h2>
 
+        {/* Vista general de habitaciones */}
         {!isRoomSelected && Object.keys(groupedTasks).length > 0 && (
-          <>
-            <div className="row">
-              {Object.keys(groupedTasks).map(roomId => {
-                const tareas = groupedTasks[roomId];
-                const todasFinalizadas = tareas.every(task => task.condition === 'FINALIZADA');
-                const hayPendientes = tareas.some(task => task.condition === 'PENDIENTE');
-                const hayEnProceso = tareas.some(task => task.condition === 'EN PROCESO');
+          <div className="row">
+            {Object.keys(groupedTasks).map(roomId => {
+              const tareas = groupedTasks[roomId];
+              const nombreTareas = tareas.map(t => t.nombre?.toLowerCase() || "");
+              const todasFinalizadas = tareas.every(t => t.condition === 'FINALIZADA');
+              const hayPendientes = tareas.some(t => t.condition === 'PENDIENTE');
+              const hayEnProceso = tareas.some(t => t.condition === 'EN PROCESO');
 
-                // ✅ Estado general con emojis
-                let iconEstado = '❔';
-                if (todasFinalizadas) {
-                  iconEstado = '✅';
-                } else if (hayPendientes) {
-                  iconEstado = '🕒';
-                } else if (hayEnProceso) {
-                  iconEstado = '❓';
-                }
+              const isZonaComun = !tareas[0].room_nombre;
+              const esSalida = nombreTareas.some(n => n.includes("salida"));
+              const esCambioSabanas = nombreTareas.some(n => n.includes("cambio de sábanas"));
+              const esCliente = nombreTareas.some(n => n.includes("cliente"));
 
+              // Íconos
+              let iconPrioridad = esSalida ? <i className="fas fa-plane-departure text-danger me-2"></i> : null;
+              let iconRoom = null;
+              if (esCambioSabanas) {
+                iconRoom = <i className="fas fa-bed text-primary me-2"></i>;
+              } else if (isZonaComun) {
+                iconRoom = <FontAwesomeIcon icon={faBuilding} className="text-secondary me-2" />;
+              } else if (esCliente) {
+                iconRoom = <i className="fas fa-user text-warning me-2"></i>;
+              }
 
-                const nombreTareas = tareas.map(t => t.nombre?.toLowerCase() || "");
-                // Zona común
-                const isZonaComun = !tareas[0].room_nombre;
-                const esSalida = nombreTareas.some(n => n.includes("salida"));
-                const esCambioSabanas = nombreTareas.some(n => n.includes("cambio de sábanas"));
-                const esCliente = nombreTareas.some(n => n.includes("cliente"));
-             
-
-                
-                const iconRoom = isZonaComun
-                  ? <i className="fas fa-tree me-2"></i>
-                  : <i className="fas fa-bed me-2"></i>;
+              // Emoji de estado
+              let iconEstado = '❔';
+              if (todasFinalizadas) iconEstado = '✅';
+              else if (hayPendientes) iconEstado = '🕒';
+              else if (hayEnProceso) iconEstado = '❓';
 
 
-                // Ícono de prioridad: solo SALIDA
-                let iconPrioridad = null;
-                if (esSalida) {
-                  iconPrioridad = <i className="fas fa-plane-departure text-danger me-2"></i>;
-                }
+              return (
+                <div key={roomId} className="col-md-6 mb-3">
+                  <button className="custom-room-button w-100" onClick={() => handleRoomClick(roomId)}>
+                    {iconPrioridad}
+                    {iconRoom}
+                    {isZonaComun ? 'Zona común' : `Habitación: ${tareas[0].room_nombre}`}
+                    <span className="float-end">{iconEstado}</span>
+                  </button>
+                </div>
+              );
+            })}
 
-                let iconRoom = null;
-                if (esCambioSabanas && !esSalida) {
-                  iconRoom = <i className="fas fa-bed text-primary me-2"></i>;
-                } else if (isZonaComun && !esSalida) {
-                  iconRoom = <FontAwesomeIcon icon={faBuilding} className="text-secondary me-2" />;
-                } else if (esCliente && !esSalida && !esCambioSabanas && !esZonaNoble) {
-                  iconRoom = <i className="fas fa-user text-warning me-2"></i>;
-                }
-
-
-                const roomLabel = (
-                  <div className="d-flex justify-content-between align-items-center w-100">
-                    <div>
-                      {iconPrioridad}
-                      {iconRoom}
-                      {isZonaComun ? 'Zona común' : `Habitación: ${tareas[0].room_nombre}`}
-                    </div>
-                    <div className="ms-2">
-                      <span>{iconEstado}</span>
-                    </div>
-                  </div>
-                );
-                
-
-                return (
-                  <div key={roomId} className="col-md-6">
-                    <button
-                      className="custom-room-button"
-                      onClick={() => handleRoomClick(roomId)}
-                    >
-
-                      {roomLabel}
-
-                      <span>{iconRoom} {roomLabel}</span>
-                      <span>{iconEstado}</span>
-
-                    </button>
-                  </div>
-                );
-              })}
-
-              <div className="d-flex justify-content-center gap-3 mb-4">
-                <button
-                  className="action-button btn-primary"
-                  onClick={() => handleFilterTasks('all')}
-                >
-                  TODAS
-                </button>
-                <button
-                  className="action-button btn-warning"
-                  onClick={() => handleFilterTasks('pending')}
-                >
-                  PENDIENTES
-                </button>
-                <button
-                  className="action-button btn-success"
-                  onClick={() => handleFilterTasks('completed')}
-                >
-                  FINALIZADAS
-                </button>
-              </div>
+            <div className="d-flex justify-content-center gap-3 mt-4">
+              <button className="action-button btn-primary" onClick={() => handleFilterTasks('all')}>TODAS</button>
+              <button className="action-button btn-danger" onClick={() => handleFilterTasks('pending')}>PENDIENTES</button>
+              <button className="action-button btn-success" onClick={() => handleFilterTasks('completed')}>FINALIZADAS</button>
             </div>
-          </>
+          </div>
         )}
 
+
+
+        {/* Detalle de habitación */}
         {isRoomSelected && (
           <div className="mt-4">
             {groupedTasks[selectedRoomId]?.map(task => (
-
-              <div key={task.id} className="card mb-3 shadow-sm rounded-3">
+              <div key={task.id} className="card mb-3">
                 <div className="card-body">
+                  <p><strong>Tarea:</strong> {task.nombre}</p>
+                  <p><strong>Estado:</strong> <span className={`badge ${task.condition === 'PENDIENTE' ? 'bg-warning' : task.condition === 'EN PROCESO' ? 'bg-info' : 'bg-success'}`}>{task.condition}</span></p>
 
-                  {(() => {
-                    const nombre = task.nombre?.toLowerCase() || "";
-                    let textClass = "text-success";
-                    let icon = "fas fa-circle-info";
-
-                    if (nombre.includes("salida")) {
-                      textClass = "text-danger";
-                      icon = "fas fa-plane-departure";
-                    } else if (nombre.includes("cambio de sábanas")) {
-                      textClass = "text-primary"; // Azul
-                      icon = "fas fa-bed";
-                    } else if (nombre.includes("cliente")) {
-                      textClass = "text-warning";
-                      icon = "fas fa-user";
-                    }
-
-                    return (
-                      <p>
-                        <strong className={textClass}>
-                          <i className={`${icon} me-2`}></i>
-                          {task.nombre}
-                        </strong>
-                      </p>
-                    );
-                  })()}
-
-                  <p><strong>Estado actual:</strong>
-                    <span className={`badge ${task.condition === 'PENDIENTE' ? 'bg-warning' :
-
-              <div key={task.id} className="task-card">
-                <div className="task-card-body">
-                  <p><strong>Tarea asignada:</strong> {task.nombre}</p>
-                  <p><strong>Estado actual:</strong>
-                    <span className={`status-badge ${task.condition === 'PENDIENTE' ? 'bg-warning' :
-
-                      task.condition === 'EN PROCESO' ? 'bg-info' : 'bg-success'
-                      } ms-2`}>
-                      {task.condition}
-                    </span>
-                  </p>
-
-                  <div className="form-group mt-3">
-                    <label htmlFor={`nota-${task.id}`}>Observaciones</label>
+                  <div className="form-group">
+                    <label>Observaciones</label>
                     <textarea
-                      id={`nota-${task.id}`}
                       className="form-control"
+                      rows="2"
                       placeholder="Ej: Cliente descansando, no quiere limpieza..."
-                      rows={2}
                       value={task.nota_housekeeper || ""}
-                      onChange={(e) => {
-                        const updatedTasks = tasks.map(t =>
-                          t.id === task.id ? { ...t, nota_housekeeper: e.target.value } : t
+                      onChange={e => {
+                        const newValue = e.target.value;
+                        setTasks(prevTasks =>
+                          prevTasks.map(t =>
+                            t && t.id === task.id ? { ...t, nota_housekeeper: newValue } : t
+                          )
                         );
-                        setTasks(updatedTasks);
                       }}
-                      onBlur={async (e) => {
+                      onBlur={async e => {
                         const token = localStorage.getItem('token');
                         if (!token) return;
 
@@ -487,72 +399,44 @@ const PrivateHouseKeeper = () => {
                             method: 'PUT',
                             headers: {
                               'Authorization': `Bearer ${token}`,
-                              'Content-Type': 'application/json',
+                              'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
                               condition: task.condition,
                               nota_housekeeper: e.target.value,
                               photo_url: task.photo_url || ""
-                            }),
+                            })
                           });
 
                           if (!response.ok) throw new Error("Error al guardar observación");
 
                           const updatedTask = await response.json();
-
-                          // Actualiza el estado local con la tarea actualizada
                           setTasks(prev =>
                             prev.map(t => (t.id === task.id ? updatedTask : t))
                           );
 
                         } catch (error) {
                           console.error("Error al guardar nota:", error);
+                          alert("Hubo un error al guardar la observación.");
                         }
                       }}
-
-
-                    ></textarea>
-
-                  </div>
-
-
-                  <div className="mb-3">
-                    <label htmlFor="photo" className="form-label">Foto</label>
-
-
-                  <div className="mb-3">
-                    <label htmlFor="photo" className="form-label"><strong>Foto</strong></label>
-
-                    <CloudinaryApiHotel
-                      setPhotoUrl={(url) => handlePhotoUpload(task.id, url)}
-                      setErrorMessage={(msg) => handlePhotoError(task.id, msg)}
                     />
+                  </div>
+
+
+                  <div className="my-3">
+                    <label><strong>Foto</strong></label>
+                    <CloudinaryApiHotel setPhotoUrl={url => handlePhotoUpload(task.id, url)} setErrorMessage={msg => handlePhotoError(task.id, msg)} />
                     {(taskPhotos[task.id] || task.photo_url) && (
-                      <div className="mt-2">
-                        <img
-                          src={taskPhotos[task.id] || task.photo_url}
-                          alt={`Tarea ${task.nombre}`}
-                          className="img-thumbnail"
-                          style={{ maxWidth: '200px' }}
-                        />
-                      </div>
-                    )}
-                    {errorMessages[task.id] && (
-                      <div className="text-danger small mt-1">{errorMessages[task.id]}</div>
+                      <img src={taskPhotos[task.id] || task.photo_url} className="img-thumbnail mt-2" style={{ maxWidth: '200px' }} alt="Preview" />
                     )}
                   </div>
 
-                  <div className="mt-3 p-3 border rounded d-flex justify-content-around">
-                    {['PENDIENTE', 'EN PROCESO', 'FINALIZADA'].map((status) => (
+                  <div className="d-flex justify-content-between">
+                    {['PENDIENTE', 'EN PROCESO', 'FINALIZADA'].map(status => (
                       <button
                         key={status}
-
-                        className={`btn ${status === 'PENDIENTE' ? 'btn-warning' :
-
-                        className={`action-button ${status === 'PENDIENTE' ? 'btn-warning' :
-
-                          status === 'EN PROCESO' ? 'btn-info' : 'btn-success'
-                          }`}
+                        className={`btn ${status === 'PENDIENTE' ? 'btn-warning' : status === 'EN PROCESO' ? 'btn-info' : 'btn-success'}`}
                         onClick={() => handleStatusChange(task.id, status)}
                         disabled={task.condition === status}
                       >
@@ -560,127 +444,53 @@ const PrivateHouseKeeper = () => {
                       </button>
                     ))}
                   </div>
-
-                  {task.condition === 'FINALIZADA' && (
-                    <div className="text-center mt-2">
-                      <i className="bi bi-check-circle-fill text-success fs-4"></i>
-                      <span className="ms-2">Tarea completada</span>
-                    </div>
-                  )}
                 </div>
               </div>
             ))}
 
-            <div className="mt-3">
-
-              <button className="btn custom-room-button" onClick={toggleMaintenanceTasks}>
-
-              <button className="custom-room-button" onClick={toggleMaintenanceTasks}>
-
-                {showMaintenanceTasks ? 'Ocultar tareas de mantenimiento' : 'Mostrar tareas de mantenimiento'}
-              </button>
+            <div className="text-end">
+              <button className="btn btn-secondary" onClick={handleBackToRooms}>🔙 Volver</button>
             </div>
 
-            {showMaintenanceTasks && (
+            <div className="mt-4">
+              <button className="btn btn-outline-info" onClick={toggleMaintenanceTasks}>
+                {showMaintenanceTasks ? 'Ocultar tareas de mantenimiento' : 'Mostrar tareas de mantenimiento'}
+              </button>
 
-              <div className="card shadow-lg mt-4">
-                <div className="card-body">
-
-              <div className="maintenance-section">
-                <div className="maintenance-form">
-
-                  <h5 className="card-title">Tarea de Mantenimiento</h5>
-                  <form>
-                    <div className="form-group mb-3">
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Ingresa la tarea de mantenimiento..."
-                        value={nombre}
-                        onChange={(e) => setNombre(e.target.value)}
-                      />
-                    </div>
-                    <strong>Foto: </strong>
-                    <div className="form-group mb-3">
-                      <CloudinaryApiHotel setPhotoUrl={setMaintenancePhoto} setErrorMessage={() => { }} />
-                      {maintenancePhoto && <img src={maintenancePhoto} alt="Preview" style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 8, marginTop: 10 }} />}
-                    </div>
-                    <button
-                      type="button"
-
-                      className="btn btn-block"
-                      style={{ backgroundColor: "#0dcaf0" }}
-
-                      className="action-button btn-info"
-
-                      onClick={createMaintenanceTask}
-                    >
-                      Crear Tarea
-                    </button>
-
+              {showMaintenanceTasks && (
+                <div className="card mt-3">
+                  <div className="card-body">
+                    <h5>Crear nueva incidencia</h5>
+                    <input type="text" className="form-control mb-2" placeholder="Nombre de la tarea" value={nombre} onChange={e => setNombre(e.target.value)} />
+                    <CloudinaryApiHotel setPhotoUrl={setMaintenancePhoto} setErrorMessage={() => { }} />
+                    {maintenancePhoto && <img src={maintenancePhoto} className="img-thumbnail mt-2" style={{ width: 80, height: 80 }} alt="Foto incidencia" />}
+                    <button className="btn btn-info mt-3" onClick={createMaintenanceTask}>Crear Tarea</button>
 
                     <div className="mt-4">
-
-                    <div className="maintenance-list">
-
-                      <h4 className="mb-3">Listado de Tareas de Mantenimiento</h4>
+                      <h6>Tareas pendientes</h6>
                       {maintenanceTasks.length > 0 ? (
-                        <div className="list-group">
+                        <ul className="list-group">
                           {maintenanceTasks.map(task => (
-
-                            <div key={task.id} className="list-group-item d-flex justify-content-between align-items-center">
-                              <span>{task.nombre}</span>
-                              <span className={`badge ${task.condition === 'PENDIENTE' ? 'bg-primary' : 'bg-secondary'} ms-2`}>
-
-                            <div key={task.id} className="maintenance-item">
-                              <span>{task.nombre}</span>
-                              <span className={`status-badge ${task.condition === 'PENDIENTE' ? 'bg-danger' : 'bg-secondary'}`}>
-
-                                {task.condition}
-                              </span>
-                            </div>
+                            <li key={task.id} className="list-group-item d-flex justify-content-between align-items-center">
+                              {task.nombre}
+                              <span className="badge bg-danger">{task.condition}</span>
+                            </li>
                           ))}
-
-                        </div>
+                        </ul>
                       ) : (
-                        <div className="alert alert-info" role="alert">
-                          No hay tareas de mantenimiento disponibles.
-                        </div>
-
-                        </div>
-                      ) : (
-                        <div className="alert alert-info" role="alert">
-                          No hay tareas de mantenimiento disponibles.
-                        </div>
-
+                        <p>No hay tareas de mantenimiento</p>
                       )}
                     </div>
-                  </form>
+                  </div>
                 </div>
-              </div>
-            )}
-
-            <button
-
-              className="btn custom-room-button w-100 mt-3 fw-semibold py-2"
-
-              className="custom-room-button w-100 mt-3"
-
-              onClick={handleBackToRooms}
-            >
-              🔙 Volver a todas las habitaciones
-            </button>
+              )}
+            </div>
           </div>
         )}
 
-        <div className="d-flex justify-content-center mt-4">
-
-          <button className="btn px-5 py-2" style={{ backgroundColor: "#0dcaf0" }} onClick={handleLogout}>
+        <div className="text-center mt-5">
+          <button className="btn btn-outline-dark" onClick={handleLogout}>
             <i className="fas fa-sign-out-alt me-2"></i> Cerrar sesión
-
-          <button className="logout-button" onClick={handleLogout}>
-            <i className="fas fa-sign-out-alt"></i> Cerrar sesión
-
           </button>
         </div>
       </div>
@@ -689,3 +499,4 @@ const PrivateHouseKeeper = () => {
 };
 
 export default PrivateHouseKeeper;
+

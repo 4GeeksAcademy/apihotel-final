@@ -704,6 +704,7 @@ def update_housekeeper_task_by_hotel(id):
     task.condition = data.get('condition', task.condition)
     task.assignment_date = data.get('assignment_date', task.assignment_date)
     task.submission_date = data.get('submission_date', task.submission_date)
+    task.nota_housekeeper = data.get("nota_housekeeper", task.nota_housekeeper)
 
     db.session.commit()
     return jsonify(task.serialize()), 200
