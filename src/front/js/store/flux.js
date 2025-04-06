@@ -234,18 +234,33 @@ const getState = ({ getStore, getActions, setStore }) => {
 				const url = branchSeleccionado
 					? `${process.env.BACKEND_URL}/api/branches_by_hotel/${branchSeleccionado.id}`
 					: `${process.env.BACKEND_URL}/api/branches_by_hotel`;
-
+			
+				// Aseguramos que longitud y latitud sean válidas o null
+				const dataLimpia = {
+					...branchData,
+					latitud:
+						branchData.latitud === "" || isNaN(branchData.latitud)
+							? null
+							: parseFloat(branchData.latitud),
+					longitud:
+						branchData.longitud === "" || isNaN(branchData.longitud)
+							? null
+							: parseFloat(branchData.longitud),
+				};
+			
 				const res = await fetch(url, {
 					method,
 					headers: {
 						"Content-Type": "application/json",
 						Authorization: "Bearer " + store.token,
 					},
-					body: JSON.stringify(branchData),
+					body: JSON.stringify(dataLimpia),
 				});
+			
 				if (!res.ok) throw new Error("Error al crear o actualizar branch");
 				return await res.json();
 			},
+			
 
 			deleteBranch: async (id) => {
 				const store = getStore();
@@ -602,22 +617,24 @@ const getState = ({ getStore, getActions, setStore }) => {
 
 			//tareas de mantenimiento
 			getMaintenanceTasks: async () => {
-				const store = getStore();
+				const token = localStorage.getItem("token");
 				try {
-				  const res = await fetch(process.env.BACKEND_URL + "/api/maintenancetask_by_hotel", {
-					headers: { Authorization: "Bearer " + store.token }
+				  const resp = await fetch(process.env.BACKEND_URL + "/api/maintenancetask_by_hotel", {
+					method: "GET",
+					headers: {
+					  Authorization: "Bearer " + token,
+					},
 				  });
-				  
-				  if (!res.ok) throw new Error("Error al obtener tareas");
-				  const data = await res.json();
-				  
+			  
+				  if (!resp.ok) throw new Error("Error al obtener las tareas");
+			  
+				  const data = await resp.json();
 				  setStore({ maintenanceTasks: data });
-				  return data;
 				} catch (error) {
-				  console.error("Error en getMaintenanceTasks:", error);
-				  throw error;
+				  console.error("Error cargando tareas de mantenimiento:", error);
 				}
 			  },
+			  
 		  
 			  createMaintenanceTask: async (data) => {
 				const store = getStore();

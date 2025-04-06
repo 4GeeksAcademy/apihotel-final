@@ -2,6 +2,9 @@ import React, { useEffect, useState, useContext, useRef } from "react";
 import { Context } from "../store/appContext";
 import PrivateLayout from "../component/privateLayout";
 import html2pdf from "html2pdf.js";
+import { faPlaneDeparture, faUser, faCircleInfo, faClock, faSpinner, faCheckCircle } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+
 
 const HousekeeperWorkLog = () => {
   const { store, actions } = useContext(Context);
@@ -51,8 +54,40 @@ const HousekeeperWorkLog = () => {
     html2pdf().set(opt).from(element).save();
   };
 
- 
-  
+  const getTaskStyle = (tarea) => {
+    const t = tarea.toUpperCase();
+
+    if (t.includes("SALIDA")) {
+      return { className: "bg-danger text-white rounded-pill px-2", icon: faPlaneDeparture };
+    }
+
+    if (t.includes("CAMBIO DE SÁBANAS") || t.includes("SABANA")) {
+      return { className: "bg-primary text-white rounded-pill px-2", icon: "fas fa-bed" };
+    }
+
+    if (t.includes("CLIENTE")) {
+      return { className: "bg-warning text-dark rounded-pill px-2", icon: faUser };
+    }
+
+    return { className: "bg-success text-white rounded-pill px-2", icon: faCircleInfo };
+  };
+
+
+  const getConditionStyle = (condition) => {
+    switch (condition) {
+      case "PENDIENTE":
+        return { className: "badge bg-danger d-inline-flex align-items-center gap-1", icon: faClock };
+      case "EN PROCESO":
+        return { className: "badge bg-warning text-dark d-inline-flex align-items-center gap-1", icon: faSpinner };
+      case "FINALIZADA":
+        return { className: "badge bg-success d-inline-flex align-items-center gap-1", icon: faCheckCircle };
+      default:
+        return { className: "badge bg-secondary", icon: faCircleInfo };
+    }
+  };
+
+
+
 
   return (
     <PrivateLayout>
@@ -95,7 +130,7 @@ const HousekeeperWorkLog = () => {
           <button className="btn btn-sm btn-outline-primary me-2" onClick={handleDownloadPDF}>
             📥 Descargar PDF
           </button>
-       </div>
+        </div>
 
         <div ref={printRef}>
           {filteredTasks.length > 0 && uniqueHousekeepers.length === 1 && (
@@ -117,6 +152,7 @@ const HousekeeperWorkLog = () => {
                 <th>Habitación</th>
                 <th>Sucursal</th>
                 <th>Estado</th>
+                <th>Observación</th>
               </tr>
             </thead>
             <tbody>
@@ -129,7 +165,18 @@ const HousekeeperWorkLog = () => {
                 return (
                   <tr key={task.id}>
                     <td>{hk?.nombre || "Desconocido"}</td>
-                    <td>{task.nombre}</td>
+                    <td>
+                      <span className={`d-inline-flex align-items-center gap-2 ${getTaskStyle(task.nombre).className}`}>
+                        {typeof getTaskStyle(task.nombre).icon === "string" ? (
+                          <i className={`${getTaskStyle(task.nombre).icon}`}></i>
+                        ) : (
+                          <FontAwesomeIcon icon={getTaskStyle(task.nombre).icon} />
+                        )}
+                        {task.nombre}
+                      </span>
+
+                    </td>
+
                     <td>{task.assignment_date?.split("T")[0]}</td>
                     <td>{roomName}</td>
                     <td>
@@ -139,23 +186,22 @@ const HousekeeperWorkLog = () => {
                           : store.branches.find(b => b.id === store.housekeepers.find(h => h.id === task.id_housekeeper)?.id_branche)?.nombre || "-"
                       }
                     </td>
-
                     <td>
-                      <span
-                        className={`badge ${task.condition === "FINALIZADA"
-                          ? "bg-success"
-                          : task.condition === "EN PROCESO"
-                            ? "bg-warning text-dark"
-                            : "bg-danger"
-                          }`}
-                      >
+                      <span className={getConditionStyle(task.condition).className}>
+                        <FontAwesomeIcon icon={getConditionStyle(task.condition).icon} />
                         {task.condition}
                       </span>
                     </td>
+                    <td>
+                      {task.nota_housekeeper
+                      }
+                    </td>
+
                   </tr>
                 );
               })}
             </tbody>
+
           </table>
         </div>
       </div>
